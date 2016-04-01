@@ -11,6 +11,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.PushResult;
+import org.eclipse.jgit.transport.TagOpt;
 
 import java.io.File;
 import java.io.IOException;
@@ -33,14 +34,15 @@ public class main {
 
 
     public static void main(String[] args) throws GitAPIException {
-
-        ttt();
-
+        Git git = getGit();
+        fetchWithTags(git);
+        ttt(git);
+        getAllTags(git);
     }
 
 
-    public static void ttt() throws GitAPIException {
-        Git git = getGit();
+    public static void ttt(Git git) throws GitAPIException {
+
         ObjectId objectId = ObjectId.fromString(commitId);
 
         Iterable<RevCommit> commits = git.log().call();
@@ -53,10 +55,13 @@ public class main {
             }
         }
         TagCommand tagCommand = git.tag().setObjectId(id);
-        tagCommand.setName("test_tag_" +buildNumber+"_"+tagPrefixFull+"_"+time());
+        tagCommand.setName("test_tag_" + buildNumber + "_" + tagPrefixFull + "_" + time());
+        tagCommand.setAnnotated(false);
         tagCommand.call();
 
         Iterable<PushResult> call = git.push().setPushTags().call();
+
+
         int wewew=232;
     }
 
@@ -109,5 +114,16 @@ public class main {
 //        return s;
 
         return String.valueOf(date.getTime());
+    }
+
+
+
+    public static void fetchWithTags(Git git) throws GitAPIException {
+        git.fetch().setTagOpt(TagOpt.FETCH_TAGS).call();
+    }
+
+    public static void getAllTags(Git git) throws GitAPIException {
+        Map<String, Ref> tags = git.getRepository().getTags();
+        int rere=54;
     }
 }
