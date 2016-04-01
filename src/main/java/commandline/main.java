@@ -2,6 +2,7 @@ package commandline;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ListTagCommand;
+import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
@@ -9,9 +10,11 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.PushResult;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -22,13 +25,14 @@ public class main {
     static String gitPathName = "C:\\Git\\Jenkins\\mqm_for_jenkins_git";
     //static String gitPathName = "C:\\Git\\PNP_QA";
     static String commitId = "8d6c5e73b47e69539a06ccf17bba4b168685cd22";
+    static String tagPrefixFull = "Full_build";
+    static String tagPrefixQuick = "Quick_build";
+    static String tagPrefixNightly = "Nightly_build";
+
+    static String buildNumber = "12345";
+
 
     public static void main(String[] args) throws GitAPIException {
-        String tagPrefixFull = "Full: build #";
-        String tagPrefixQuick = "Quick: build #";
-        String tagPrefixNightly = "Nightly: build #";
-
-        String buildNumber = "12345";
 
         ttt();
 
@@ -40,18 +44,20 @@ public class main {
         ObjectId objectId = ObjectId.fromString(commitId);
 
         Iterable<RevCommit> commits = git.log().call();
-        final RevObject[] id = new RevObject[1];
-        commits.forEach(tempCommit -> {
-            if (tempCommit.getId().compareTo(objectId) == 0) {
-                System.out.println("tempCommit = " + tempCommit);
-                id[0] = tempCommit;
-                int rere=344;
+        RevObject id = null;
+        for (RevCommit commit : commits) {
+            if (commit.getId().compareTo(objectId) == 0) {
+                System.out.println("tempCommit = " + commit);
+                id = commit;
+                break;
             }
+        }
+        TagCommand tagCommand = git.tag().setObjectId(id);
+        tagCommand.setName("test_tag_" +buildNumber+"_"+tagPrefixFull+"_"+time());
+        tagCommand.call();
 
-        });
-
-
-        git.tag().setObjectId(id[0]);
+        Iterable<PushResult> call = git.push().setPushTags().call();
+        int wewew=232;
     }
 
     public static void tst() {
@@ -61,7 +67,9 @@ public class main {
     }
 
     private static Git getGit() {
-        return new Git(getRepository());
+        Git git = new Git(getRepository());
+
+        return git;
     }
 
     private static Repository getRepository() {
@@ -74,6 +82,7 @@ public class main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         return repo;
     }
 
@@ -91,5 +100,14 @@ public class main {
             e.printStackTrace();
         }
         int rer = 4343;
+    }
+    private static String time(){
+        Date date = new Date();
+//        DateFormat df = new SimpleDateFormat("yyyyMMdd");
+//
+//        String s = date.toString();
+//        return s;
+
+        return String.valueOf(date.getTime());
     }
 }
