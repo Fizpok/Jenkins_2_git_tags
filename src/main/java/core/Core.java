@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.PushResult;
@@ -14,8 +15,9 @@ import org.eclipse.jgit.transport.TagOpt;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -49,23 +51,21 @@ public class Core {
         return names;
     }
 
-    public static Collection<Ref> getAllTagsWithDate(Git git) throws GitAPIException, IOException {
-        Map<String, Ref> tags = git.getRepository().getTags();
+    public static Collection<RevTag> getAllTagsWithDate(Git git) throws IOException {
+        Repository repository = git.getRepository();
+        Map<String, Ref> tags = repository.getTags();
         Collection<Ref> values = tags.values();
-        RevWalk revWalk = new RevWalk(git.getRepository());
+        RevWalk revWalk = new RevWalk(repository);
+        Set<RevTag> revTags = new TreeSet<>(new DateComparator<RevTag>());
         for (Ref tag : values) {
             ObjectId objectId = tag.getObjectId();
-
-            //int type = revWalk.parseTag(objectId).getType();
-            //Date when = revWalk.parseTag(objectId).getTaggerIdent().getWhen();
-            int type = revWalk.parseAny(objectId).getType();
-            //int type = revWalk.lookupTag(objectId).getType();
-            if (type == 4) {
-                Date when = revWalk.parseTag(objectId).getTaggerIdent().getWhen();
-                int wqwq = 3232;
+            int objectType = revWalk.parseAny(objectId).getType();
+            if (objectType == 4) {
+                RevTag revTag = revWalk.parseTag(objectId);
+                revTags.add(revTag);
             }
         }
-        return values;
+        return revTags;
     }
 
     public static void deleteTags(Git git, String... tagsRefFullName) throws GitAPIException {

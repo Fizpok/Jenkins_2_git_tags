@@ -2,19 +2,18 @@ package commandline;
 
 import core.Core;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.ListTagCommand;
 import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
-import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevObject;
+import org.eclipse.jgit.revwalk.RevTag;
 import org.eclipse.jgit.transport.PushResult;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
-import java.util.List;
 
 /**
  * Created by Evgeney Fiskin on 31-03-2016.
@@ -33,9 +32,9 @@ public class main {
         Git git = Core.getGit();
         Core.fetchWithTags(git);
         ttt(git);
-        //getAllTagsWithDate(git);
+        Collection<RevTag> allTagsWithDate = Core.getAllTagsWithDate(git);
         String[] allTags = Core.getAllTags(git);
-        Core.deleteTags(git, allTags);
+   //     Core.deleteTags(git, allTags);
     }
 
 
@@ -61,22 +60,6 @@ public class main {
 
 
         int wewew = 232;
-    }
-
-    public static void porcelanApiTst() {
-        Repository repo = Core.getRepository();
-
-        Git git = new Git(repo);
-        ListTagCommand listTagCommand = git.tagList();
-        List<Ref> refTagsList;
-        try {
-            Iterable<RevCommit> revCommits = git.log().call();
-            refTagsList = listTagCommand.call();
-            int dfdfd = 343;
-        } catch (GitAPIException e) {
-            e.printStackTrace();
-        }
-        int rer = 4343;
     }
 
     private static String time() {
