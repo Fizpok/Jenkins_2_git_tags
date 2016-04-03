@@ -14,16 +14,14 @@ import org.eclipse.jgit.transport.TagOpt;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Created by Evgeney Fiskin on Apr-2016.
  */
 public class Core {
+
     static String gitPathName = "C:\\Git\\Jenkins\\mqm_for_jenkins_git";
 
     public static Git getGit() throws IOException {
@@ -32,11 +30,10 @@ public class Core {
     }
 
     public static Repository getRepository() throws IOException {
-        File gitDir = new File(gitPathName + "\\.git");
+        File gitDir = new File(gitPathName + File.pathSeparator+".git");
         FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitDir).readEnvironment()// scan environment GIT_* variables
                 .findGitDir();// scan up the file system tree
-        Repository repo = null;
-            repo = builder.build();
+        Repository repo = builder.build();
         return repo;
     }
 
@@ -44,19 +41,19 @@ public class Core {
         git.fetch().setTagOpt(TagOpt.FETCH_TAGS).call();
     }
 
-    public static String[] getAllTags(Git git){
+    public static String[] getAllTags(Git git) {
         Map<String, Ref> tags = git.getRepository().getTags();
         Collection<Ref> values = tags.values();
         String[] names = values.stream().map(tempRef -> tempRef.getName()).collect(Collectors.toList()).toArray(new String[values.size()]);
         return names;
     }
 
-    public static Collection<RevTag> getAllTagsWithDate(Git git) throws IOException {
+    public static SortedSet<RevTag> getAllAnnotatedTagsByDate(Git git) throws IOException {
         Repository repository = git.getRepository();
         Map<String, Ref> tags = repository.getTags();
         Collection<Ref> values = tags.values();
         RevWalk revWalk = new RevWalk(repository);
-        Set<RevTag> revTags = new TreeSet<>(new DateComparator<RevTag>());
+        SortedSet<RevTag> revTags = new TreeSet<>(new TagsByDateComparator<RevTag>());
         for (Ref tag : values) {
             ObjectId objectId = tag.getObjectId();
             int objectType = revWalk.parseAny(objectId).getType();
@@ -65,6 +62,7 @@ public class Core {
                 revTags.add(revTag);
             }
         }
+
         return revTags;
     }
 

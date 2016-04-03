@@ -32,7 +32,7 @@ public class main {
         Git git = Core.getGit();
         Core.fetchWithTags(git);
         ttt(git);
-        Collection<RevTag> allTagsWithDate = Core.getAllTagsWithDate(git);
+        Collection<RevTag> allTagsWithDate = Core.getAllAnnotatedTagsByDate(git);
         String[] allTags = Core.getAllTags(git);
    //     Core.deleteTags(git, allTags);
     }
