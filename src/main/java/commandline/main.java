@@ -34,58 +34,78 @@ public class main {
     public static void main(String[] args) throws GitAPIException, IOException {
         boolean isCorrectArgs = false;
         int deleteCount = 0;
+        String namePrefix;
+        String buildNumber;
+        String commitRev;
+        String tagName;
+
         Arrays.stream(args).forEach(String::trim);
-        if (args.length < 2 || args.length > 4 || (args.length == 1 && (args[0].equals("/?") || args[0].equalsIgnoreCase("/help")))) {
-            isCorrectArgs = false;
+        if (args.length == 1 && (args[0].equals("/?") || args[0].equalsIgnoreCase("/help"))) {
+            printHelp();
         } else {
-            String namePrefix = args[0].trim();
-            String buildNumber = args[1].trim();
-            if (Repository.isValidRefName(namePrefix)) {
-                if (buildNumber.isEmpty() || !isUnsignInt(buildNumber)) {
-                    isCorrectArgs = false;
-                } else {
-                    isCorrectArgs = true;
-                    String tagName = new StringBuilder(namePrefix).append('_').append(buildNumber).toString();
-                    if (args.length > 2){
-                        if(args[2].trim().equals("-d")){
-                            if (args.length == 4){
-                                if (isUnsignInt(args[3].trim())){
-                                    deleteCount=Integer.parseInt(args[3].trim());
-                                }
-                                else{
-                                    isCorrectArgs=false;
-                                }
-                            }
-                            else{
-                                deleteCount=5;
-                            }
-                        }
-                        else{
-                            isCorrectArgs=false;
-                        }
+            if (args.length < 3 || args.length > 5) {
+                isCorrectArgs = false;
+            } else {
+                namePrefix = args[0];
+                buildNumber = args[1];
+                commitRev = args[2];
+                if (Repository.isValidRefName(namePrefix)) {
+                    if (buildNumber.isEmpty() || !isUnsignInt(buildNumber)) {
+                        isCorrectArgs = false;
                     } else {
-                        deleteCount = 0;
+                        if (isCorrectCommitRev(commitRev)) {
+                            isCorrectArgs = true;
+                            tagName = new StringBuilder(namePrefix).append('_').append(buildNumber).toString();
+                            if (args.length > 3) {
+                                if (args[3].equals("-d")) {
+                                    if (args.length == 5) {
+                                        if (isUnsignInt(args[4])) {
+                                            deleteCount = Integer.parseInt(args[4]);
+                                        } else {
+                                            isCorrectArgs = false;
+                                        }
+                                    } else {
+                                        deleteCount = 5;
+                                    }
+                                } else {
+                                    isCorrectArgs = false;
+                                }
+                            } else { //args.length=3 must have parameters
+                                deleteCount = 0;
+                            }
+                        } else {
+                            isCorrectArgs = false;
+                        }
                     }
                 }
             }
         }
-
-
-        Git git = Core.getGit();
-        Core.fetchWithTags(git);
-        ttt(git);
-        Collection<RevTag> allTagsWithDate = Core.getAllAnnotatedTagsByDate(git);
-        String[] allTags = Core.getAllTags(git);
-        //     Core.deleteTags(git, allTags);
+        if (isCorrectArgs) {
+            Git git = Core.getGit();
+            Core.fetchWithTags(git);
+            ttt(git);
+            Collection<RevTag> allTagsWithDate = Core.getAllAnnotatedTagsByDate(git);
+            String[] allTags = Core.getAllTags(git);
+            //     Core.deleteTags(git, allTags);}
+        } else {
+            printError();
+        }
     }
 
-    private static boolean isUnsignInt(String str) {
-        return str.matches("^\\d+$");
+    private static boolean isCorrectCommitRev(String commitRev) {
+        return commitRev.matches("^[0-9a-fA-F]{40}$");
+    }
+
+    private static boolean isUnsignInt(String strInteger) {
+        return strInteger.matches("^\\d+$");
     }
 
     private static void printHelp() {
         System.out.println("j2gt tag_name_prefix build_number Commit_revision [-d [n]]");
+    }
 
+    private static void printError() {
+        System.out.println("error");
     }
 
 
