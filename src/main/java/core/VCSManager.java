@@ -11,4 +11,6 @@ public interface VCSManager {
     void createTag(String commitRevision, String tagName);
 
     void deleteTags(String namePrefix, int numberTagsToLeft) throws GitAPIException, IOException;
+
+    boolean isValidRefName(String name);
 }

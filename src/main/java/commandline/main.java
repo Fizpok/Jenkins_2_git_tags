@@ -10,8 +10,10 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevObject;
 import org.eclipse.jgit.transport.PushResult;
+import utils.Validator;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 
 /**
@@ -34,7 +36,7 @@ public class main {
         String buildNumber;
         String commitRev;
         String tagName;
-/*
+
         Arrays.stream(args).forEach(String::trim);
         if (args.length == 1 && (args[0].equals("/?") || args[0].equalsIgnoreCase("/help"))) {
             printHelp();
@@ -45,7 +47,7 @@ public class main {
                 namePrefix = args[0];
                 buildNumber = args[1];
                 commitRev = args[2];
-                if (Repository.isValidRefName(namePrefix)) {
+                if (Validator.isValidRefName(namePrefix)) {
                     if (buildNumber.isEmpty() || !Validator.isUnsignInt(buildNumber)) {
                         isCorrectArgs = false;
                     } else {
@@ -77,10 +79,10 @@ public class main {
             }
         }
         if (isCorrectArgs) {
-        */
-        if (true) {
+
+        //if (true) {
             //   ttt(git);
-            VCSManager gitManager = new GitManager();
+            VCSManager gitManager = GitManager.getInstance();
             gitManager.deleteTags("tagB_test", 2);
 
             //     Core.deleteTags(git, allTags);}
