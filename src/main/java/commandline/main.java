@@ -20,15 +20,11 @@ import java.util.Date;
  * Created by Evgeney Fiskin on 31-03-2016.
  */
 public class main {
-    //static String gitPathName = "C:\\Git\\PNP_QA";
-    static String commitId = "8d6c5e73b47e69539a06ccf17bba4b168685cd22";
-    static String tagPrefixFull = "Full_build";
-    static String tagPrefixQuick = "Quick_build";
-    static String tagPrefixNightly = "Nightly_build";
 
-    static String buildNumber = "12345";
     private final static int defaultCountToDelete = 5;
-
+    //
+    //j2gt tag_name_prefix build_number Commit_revision [-d [n]] //3-5
+    //j2gt tag_name_prefix -d [n]                               //2-3
     public static void main(String[] args) throws GitAPIException, IOException {
         boolean isCorrectArgs = false;
         int deleteCountAndFlag = 0;
@@ -41,7 +37,7 @@ public class main {
         if (args.length == 1 && (args[0].equals("/?") || args[0].equalsIgnoreCase("/help"))) {
             printHelp();
         } else {
-            if (args.length < 3 || args.length > 5) {
+            if (args.length < 3 || args.length > 4) {
                 isCorrectArgs = false;
             } else {
                 namePrefix = args[0];
@@ -54,8 +50,26 @@ public class main {
                         if (Validator.isCorrectCommitRev(commitRev)) {
                             isCorrectArgs = true;
                             tagName = new StringBuilder(namePrefix).append('_').append(buildNumber).toString();
-                            if (args.length > 3) {
-                                if (args[3].equals("-d")) {
+                            if (args.length == 4) {
+                                String deleteParameter = args[3];
+                                if (deleteParameter.matches("^-d\\d*$")) {
+                                    if (deleteParameter.equals("-d")) {
+                                        deleteCountAndFlag = defaultCountToDelete;
+                                    }
+                                    else {//-d1234
+                                        deleteCountAndFlag = Integer.parseInt(deleteParameter.substring(2));
+                                    }
+
+                                }
+                                else {
+                                    isCorrectArgs = false;
+                                }
+
+
+
+                                else if(){
+
+                                    }
                                     if (args.length == 5) {
                                         if (Validator.isUnsignInt(args[4])) {
                                             deleteCountAndFlag = Integer.parseInt(args[4]);
@@ -63,7 +77,6 @@ public class main {
                                             isCorrectArgs = false;
                                         }
                                     } else {
-                                        deleteCountAndFlag = defaultCountToDelete;
                                     }
                                 } else {
                                     isCorrectArgs = false;
