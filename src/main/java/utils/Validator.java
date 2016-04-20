@@ -1,25 +1,11 @@
 package utils;
 
-import core.GitManager;
-import core.VCSManager;
-
-import java.io.IOException;
-
 /**
  * Created by Evgeney Fiskin on Apr-2016.
  */
 public class Validator {
-    static VCSManager manager ;
 
-    public Validator(){
-        try {
-            manager= GitManager.getInstance();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static boolean isCorrectCommitRev(String commitRev) {
+    public static boolean isValidCommitRev(String commitRev) {
         return commitRev.matches("^[0-9a-fA-F]{40}$");
     }
 
@@ -28,6 +14,19 @@ public class Validator {
     }
 
     public static boolean isValidRefName(String namePrefix) {
-        return manager.isValidRefName(namePrefix);
+        boolean isValid;
+        if (namePrefix == null || namePrefix.isEmpty()) {
+            isValid = false;
+        } else {
+            isValid = true;
+            isValid &= namePrefix.matches("^[^@/][\\d\\w!@#$%&_\\.]+[^\\.]$");
+            isValid &= !namePrefix.matches(".*\\.lock$");
+            isValid &= !namePrefix.matches("\\.\\.");
+            isValid &= !namePrefix.matches("\\\\");
+            isValid &= !namePrefix.matches("^/");
+            isValid &= !namePrefix.matches("/$");
+            isValid &= !namePrefix.matches("@\\{");
+        }
+        return isValid;
     }
 }
