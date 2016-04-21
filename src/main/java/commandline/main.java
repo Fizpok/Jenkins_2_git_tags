@@ -1,6 +1,5 @@
 package commandline;
 
-import core.Settings;
 import core.managers.GitManager;
 import core.managers.VCSManager;
 import exceptions.*;
@@ -20,26 +19,26 @@ public class main {
     //
     //j2gt tag_name_prefix build_number Commit_revision [-d [n]] //3-5
     //j2gt tag_name_prefix -d [n]                               //2-3
-    public static void main(String[] args) throws VCSFatalRepositoryException, VCSCommitNotFoundException, UnknownGitException, VCSInvalidTagNameException, VCSRemouteConnectionException, VCSTagNotFoundException, CmdLineException {
+    public static void main(String[] argsStr) throws VCSFatalRepositoryException, VCSCommitNotFoundException, UnknownGitException, VCSInvalidTagNameException, VCSRemouteConnectionException, VCSTagNotFoundException, CmdLineException {
 
-        Settings settings = new Settings();
-        CmdLineParser parser = new CmdLineParser(settings);
+        Args args = new Args();
+        CmdLineParser parser = new CmdLineParser(args);
 
-        parser.parseArgument(args);
+        parser.parseArgument(argsStr);
 
         VCSManager gitManager = GitManager.getInstance();
-        if (Validator.isValidRefName(settings.getNamePrefix())) {
+        if (Validator.isValidRefName(args.getNamePrefix())) {
             //create commit
-            if (settings.getBuildNumber() != 0 && settings.getCommitRev() != null) {
-                if (settings.getBuildNumber() > 0 && Validator.isValidCommitRev(settings.getCommitRev())) {
-                    String tagName = settings.getNamePrefix() + "_" + settings.getBuildNumber();
-                    gitManager.createTag(tagName, settings.getCommitRev());
+            if (args.getBuildNumber() != 0 && args.getCommitRev() != null) {
+                if (args.getBuildNumber() > 0 && Validator.isValidCommitRev(args.getCommitRev())) {
+                    String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
+                    gitManager.createTag(tagName, args.getCommitRev());
                 } else {
                     printError();
                 }
             }
-            if (settings.getTagsToLeft() > -1) {
-                gitManager.deleteTags(settings.getNamePrefix(), settings.getTagsToLeft());
+            if (args.getTagsToLeft() > -1) {
+                gitManager.deleteTags(args.getNamePrefix(), args.getTagsToLeft());
             }
         } else {
             printError();

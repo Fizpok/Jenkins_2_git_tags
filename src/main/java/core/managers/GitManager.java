@@ -4,7 +4,6 @@ import core.TagsByDateComparator;
 import exceptions.*;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.*;
 import org.eclipse.jgit.errors.MissingObjectException;
@@ -208,16 +207,12 @@ public class GitManager implements VCSManager {
         RefSpec[] refsForRemoteDelete = new RefSpec[tagsRefFullNames.length];
         for (int i = 0; i < tagsRefFullNames.length; i++) {
             StringBuilder sb = new StringBuilder();
-            sb.append(":");
+            sb.append(":refs/tags/");
             sb.append(tagsRefFullNames[i]);
             refsForRemoteDelete[i] = new RefSpec(sb.toString());
         }
         try {
-            PushCommand push = git.push();
-
-            Iterable<PushResult> call = push.setPushTags().setRefSpecs(refsForRemoteDelete).call();
-
-            int rere = 434;
+            git.push().setRefSpecs(refsForRemoteDelete).call();
         } catch (InvalidRemoteException e) {
             throw new VCSFatalRepositoryException("Wrong remote repo", e);
         } catch (TransportException e) {
@@ -254,9 +249,9 @@ public class GitManager implements VCSManager {
 
     private Map<String, List<RevTag>> tagsByNamePrefix(Collection<RevTag> tags) {
         Map<String, List<RevTag>> collect = tags.stream()
-                .filter(temTag -> temTag.getTagName().contains("_"))
+                .filter(temTag -> temTag.getTagName().contains("#"))
                 .collect(Collectors.groupingBy(tempTag ->
-                                tempTag.getTagName().substring(0, tempTag.getTagName().lastIndexOf("_")))
+                                tempTag.getTagName().substring(0, tempTag.getTagName().lastIndexOf("#")))
                 );
         return collect;
     }

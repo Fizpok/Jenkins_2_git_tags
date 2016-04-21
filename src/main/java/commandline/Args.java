@@ -1,4 +1,4 @@
-package core;
+package commandline;
 
 import org.kohsuke.args4j.Option;
 
@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * Created by Evgeney Fiskin on Apr-2016.
  */
-public class Settings implements Serializable{
+public class Args implements Serializable{
 
     @Option(name="-np",usage="Set tag name prefix (Like Quick_Red)", required = true)
     private String namePrefix=null;
@@ -40,7 +40,7 @@ public class Settings implements Serializable{
     @Override
 
     public String toString() {
-        return "Settings{" +
+        return "Args{" +
                 " namePrefix='" + namePrefix + '\'' +
                 ", buildNumber=" + buildNumber +
                 ", commitRev='" + commitRev + '\'' +
