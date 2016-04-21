@@ -9,7 +9,7 @@ public class Validator {
         return commitRev.matches("^[0-9a-fA-F]{40}$");
     }
 
-    public static boolean isUnsignInt(String strInteger) {
+    public static boolean isUnsignedInt(String strInteger) {
         return strInteger.matches("^\\d+$");
     }
 
