@@ -22,7 +22,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,13 +39,13 @@ public class GitManager implements VCSManager {
     private Logger logger;
     private static GitManager gitManager;
     //ProgressMonitor progressMonitor;
-    Queue<String> tagsToRemoteRemove;
 
-    public static VCSManager getInstance() throws VCSFatalRepositoryException, VCSRemoteConnectionException, UnknownGitException {
+
+    public static VCSManager getInstance() throws VCSFatalRepositoryException, VCSRemoteConnectionException, VcsUnknownException {
         return getInstance("C:\\Git\\Jenkins\\mqm_for_jenkins_git");
     }
 
-    public static VCSManager getInstance(String gitPathName) throws VCSFatalRepositoryException, VCSRemoteConnectionException, UnknownGitException {
+    public static VCSManager getInstance(String gitPathName) throws VCSFatalRepositoryException, VCSRemoteConnectionException, VcsUnknownException {
         if (gitManager == null) {
             gitManager = new GitManager(gitPathName);
         }
@@ -58,7 +61,7 @@ public class GitManager implements VCSManager {
     }
 
     @Override
-    public void createTag(String tagName, String commitRevision) throws VCSCommitNotFoundException, UnknownGitException, VCSInvalidTagNameException, VCSFatalRepositoryException, VCSRemoteConnectionException {
+    public void createTag(String tagName, String commitRevision) throws VCSCommitNotFoundException, VcsUnknownException, VCSInvalidTagNameException, VCSFatalRepositoryException, VCSRemoteConnectionException {
         ObjectId objectId = ObjectId.fromString(commitRevision);
 
         Iterable<RevCommit> commits;
@@ -67,13 +70,13 @@ public class GitManager implements VCSManager {
         } catch (NoHeadException e) {
             throw new VCSFatalRepositoryException("Can't get commits", e);
         } catch (GitAPIException e) {
-            throw new UnknownGitException(e);
+            throw new VcsUnknownException(e);
         }
         RevObject commitRevObject = null;
 
         for (RevCommit commit : commits) {
             if (commit.getId().compareTo(objectId) == 0) {
-                logger.info("Commit "+commit.getId()+" found");
+                logger.info("Commit " + commit.getId() + " found");
                 commitRevObject = commit;
                 break;
             }
@@ -81,7 +84,7 @@ public class GitManager implements VCSManager {
         if (commitRevObject == null) {
             throw new VCSCommitNotFoundException("Commit " + commitRevision + " not found");
         }
-
+        //Create tag in local repo
         TagCommand tagCommand = git.tag().setObjectId(commitRevObject);
         tagCommand.setName(tagName);
         tagCommand.setAnnotated(true);
@@ -90,31 +93,29 @@ public class GitManager implements VCSManager {
             logger.info("Created tag " + tagName + " on commit " + commitRevObject.getId());
         } catch (RefAlreadyExistsException e) {
             throw new VCSInvalidTagNameException("The tag " + tagName + " already exists", e);
-
         } catch (InvalidTagNameException e) {
-            throw new VCSInvalidTagNameException(e);
-        } catch (ConcurrentRefUpdateException e) {
-            throw new VCSRemoteConnectionException("Can't create tag in local repo", e);
-        } catch (NoHeadException e) {
+            throw new VCSInvalidTagNameException("Wrong tags name: "+tagName,e);
+        } catch (NoHeadException | ConcurrentRefUpdateException e) {
             throw new VCSFatalRepositoryException("Can't create tag in local repo", e);
         } catch (GitAPIException e) {
-            throw new UnknownGitException(e);
+            throw new VcsUnknownException(e);
         }
 
+        //Push all tags from local repo to remote
         try {
             git.push().setPushTags().call();
-            logger.info("Push for tag \""+tagName+"\" SUCCESS");
+            logger.info("Push for tag \"" + tagName + "\" SUCCESS");
         } catch (InvalidRemoteException e) {
             throw new VCSFatalRepositoryException("Can't push tag", e);
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Can't push tag", e);
         } catch (GitAPIException e) {
-            throw new UnknownGitException(e);
+            throw new VcsUnknownException(e);
         }
     }
 
     @Override
-    public void deleteTags(String namePrefix, int numberTagsToLeft) throws VCSTagNotFoundException, UnknownGitException, VCSRemoteConnectionException, VCSFatalRepositoryException {
+    public void deleteTags(String namePrefix, int numberTagsToLeft) throws VCSTagNotFoundException, VcsUnknownException, VCSRemoteConnectionException, VCSFatalRepositoryException {
         if (numberTagsToLeft > 0) {
             //  fetchWithTags();
             ArrayList<RevTag> allAnnotatedTags = getAllAnnotatedTags();
@@ -150,7 +151,7 @@ public class GitManager implements VCSManager {
         }
     }
 
-    private void fetchWithTags() throws VCSFatalRepositoryException, VCSRemoteConnectionException, UnknownGitException {
+    private void fetchWithTags() throws VCSFatalRepositoryException, VCSRemoteConnectionException, VcsUnknownException {
         try {
             FetchCommand fetch = git.fetch();
             //fetch.setProgressMonitor(progressMonitor);
@@ -161,7 +162,7 @@ public class GitManager implements VCSManager {
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Connection error: couldn't fetch", e);
         } catch (GitAPIException e) {
-            throw new UnknownGitException(e);
+            throw new VcsUnknownException(e);
         }
     }
 
@@ -172,34 +173,21 @@ public class GitManager implements VCSManager {
         return names;
     }
 
-    private void deleteTags(String... tagsRefFullNames) throws UnknownGitException, VCSFatalRepositoryException, VCSRemoteConnectionException {
+    private void deleteTags(String... tagsRefFullNames) throws VcsUnknownException, VCSFatalRepositoryException, VCSRemoteConnectionException {
 
         try {
             git.tagDelete().setTags(tagsRefFullNames).call();
-            logger.info("Delete local tags "+tagsRefFullNames+" SUCCESS");
+            logger.info("Delete local tags " + tagsRefFullNames + " SUCCESS");
         } catch (RefNotFoundException e) {
-            logger.warn("One of tags ("+tagsRefFullNames+") not found");
+            logger.warn("One of tags (" + tagsRefFullNames + ") not found");
         } catch (GitAPIException e) {
-            throw new UnknownGitException(e);
+            throw new VcsUnknownException(e);
         }
 
-        for (String tag:tagsRefFullNames){
-            tagsToRemoteRemove.offer(tag);
-        }
-        removeTags();
-
+        removeTagsFromRemoteGit(tagsRefFullNames);
     }
 
-    private void removeTags() throws VCSFatalRepositoryException, UnknownGitException {
-        String tag=tagsToRemoteRemove.poll();
-        try {
-            removeTagsFromRemoteGit(tag);
-        } catch (VCSRemoteConnectionException e) {
-            tagsToRemoteRemove.offer(tag);
-        }
-    }
-
-    private void removeTagsFromRemoteGit(String... tagsRefFullNames) throws VCSFatalRepositoryException, VCSRemoteConnectionException, UnknownGitException {
+    private void removeTagsFromRemoteGit(String... tagsRefFullNames) throws VCSFatalRepositoryException, VCSRemoteConnectionException, VcsUnknownException {
         RefSpec[] refsForRemoteDelete = new RefSpec[tagsRefFullNames.length];
         for (int i = 0; i < tagsRefFullNames.length; i++) {
             refsForRemoteDelete[i] = new RefSpec(":refs/tags/" + tagsRefFullNames[i]);
@@ -209,13 +197,13 @@ public class GitManager implements VCSManager {
         } catch (InvalidRemoteException e) {
             throw new VCSFatalRepositoryException("Wrong remote repo", e);
         } catch (TransportException e) {
-            throw new VCSRemoteConnectionException("Connection error: couldn't delete", e);
+            throw new VCSRemoteConnectionException("Connection error: couldn't connect to remoute repo for delete", e);
         } catch (GitAPIException e) {
-            throw new UnknownGitException(e);
+            throw new VcsUnknownException(e);
         }
     }
 
-    private ArrayList<RevTag> getAllAnnotatedTags() throws UnknownGitException, VCSTagNotFoundException {
+    private ArrayList<RevTag> getAllAnnotatedTags() throws VcsUnknownException, VCSTagNotFoundException {
         Map<String, Ref> tags = repo.getTags();
         Collection<Ref> values = tags.values();
         RevWalk revWalk = new RevWalk(repo);
@@ -233,7 +221,7 @@ public class GitManager implements VCSManager {
             } catch (MissingObjectException e) {
                 throw new VCSTagNotFoundException(e);
             } catch (IOException e) {
-                throw new UnknownGitException(e);
+                throw new VcsUnknownException(e);
             }
         }
         revWalk.close();

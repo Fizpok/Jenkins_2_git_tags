@@ -16,7 +16,7 @@ public class main {
     //
     //j2gt tag_name_prefix build_number Commit_revision [-d [n]] //3-5
     //j2gt tag_name_prefix -d [n]                               //2-3
-    public static int main(String[] argsStr) throws VCSFatalRepositoryException, UnknownGitException, VCSRemoteConnectionException, VCSInvalidTagNameException, VCSCommitNotFoundException, VCSTagNotFoundException {
+    public static int main(String[] argsStr) throws VCSFatalRepositoryException, VcsUnknownException, VCSRemoteConnectionException, VCSInvalidTagNameException, VCSCommitNotFoundException, VCSTagNotFoundException {
         int statuscode = 0;
         String errorMessage;
         Args args = new Args();
