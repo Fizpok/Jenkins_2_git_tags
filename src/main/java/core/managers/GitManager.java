@@ -22,10 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -65,14 +62,14 @@ public class GitManager implements VCSManager {
     }
 
     @Override
-    public void createTag(String tagName, String commitRevision) throws VCSCommitNotFoundException, VcsUnknownException, VCSInvalidTagNameException, VcsCommonFatalRepositoryException, VCSRemoteConnectionException {
+    public void createTag(String tagName, String commitRevision) throws VCSCommitNotFoundException, VcsUnknownException, VCSInvalidTagNameException, VcsRepositoryException, VCSRemoteConnectionException {
         ObjectId objectId = ObjectId.fromString(commitRevision);
 
         Iterable<RevCommit> commits;
         try {
             commits = git.log().call();
         } catch (NoHeadException e) {
-            throw new VcsCommonFatalRepositoryException("Can't get commits", e);
+            throw new VcsRepositoryException("Can't get commits", e);
         } catch (GitAPIException e) {
             throw new VcsUnknownException(e);
         }
@@ -105,7 +102,7 @@ public class GitManager implements VCSManager {
         } catch (InvalidTagNameException e) {
             throw new VCSInvalidTagNameException("Wrong tags name: " + tagName, e);
         } catch (NoHeadException | ConcurrentRefUpdateException e) {
-            throw new VcsCommonFatalRepositoryException("Can't create tag in local repo, please fix you local repo and try again", e);
+            throw new VcsRepositoryException("Can't create tag in local repo, please fix you local repo and try again", e);
         } catch (GitAPIException e) {
             throw new VcsUnknownException(e);
         }
@@ -115,7 +112,7 @@ public class GitManager implements VCSManager {
             git.push().setPushTags().call();
             logger.debug("Push for tag \"" + tagName + "\" SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VcsCommonFatalRepositoryException("Can't push tag", e);
+            throw new VcsRepositoryException("Can't push tag", e);
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Can't push tag", e);
         } catch (GitAPIException e) {
@@ -173,14 +170,18 @@ public class GitManager implements VCSManager {
             FetchCommand fetch = git.fetch();
             //fetch.setProgressMonitor(progressMonitor);
             fetch.setTagOpt(TagOpt.FETCH_TAGS).call();
-            logger.debug("Fetch SUCCESS");
+            logger.debug("Fetch from "+getRemoteRepoURI()+" SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VCSWrongRemoteRepoException("Wrong remote repo", e);
+            throw new VCSWrongRemoteRepoException("Wrong remote repo: "+ getRemoteRepoURI(), e);
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Connection error: couldn't fetch", e);
         } catch (GitAPIException e) {
             throw new VcsUnknownException(e);
         }
+    }
+
+    public String getRemoteRepoURI() {
+        return repo.getConfig().getString("remote", "origin", "url");
     }
 
     private String[] getAllTags() {
@@ -209,9 +210,9 @@ public class GitManager implements VCSManager {
         }
         try {
             git.push().setRefSpecs(refsForRemoteDelete).call();
-            logger.debug("Delete tags from remote repo SUCCESS");
+            logger.debug("Delete tags from remote repo "+getRemoteRepoURI()+" SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VCSWrongRemoteRepoException("Wrong remote repo", e);
+            throw new VCSWrongRemoteRepoException("Wrong remote repo: "+ getRemoteRepoURI(), e);
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Connection error: couldn't connect to remote repo for delete", e);
         } catch (GitAPIException e) {

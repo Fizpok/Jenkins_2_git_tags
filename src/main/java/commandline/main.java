@@ -15,6 +15,11 @@ import java.util.Comparator;
  */
 public class main {
 
+    private static final int UNKNOWN_ERROR = 10;
+    private static final int WRONG_CLI_ARG = 20;
+    private static final int REPO_ERROR = 30;
+    private static final int REPO_CONNECTION_ERROR = 40;
+
     public static void main(String[] argsStr) {
         //The ASCII art created by http://patorjk.com/software/taag/
         System.out.println("     _      U _____ u   _   _        _  __                    _   _       ____     \n" +
@@ -43,7 +48,7 @@ public class main {
         Args args = new Args();
         Comparator<OptionHandler> sorter = (o1, o2) -> o1.option.usage().compareTo(o2.option.usage());
         ParserProperties parser2Properties = ParserProperties.defaults().withShowDefaults(false).withOptionSorter(sorter);
-        CmdLineParser parser = new CmdLineParser(args,parser2Properties);
+        CmdLineParser parser = new CmdLineParser(args, parser2Properties);
 
         parser.printSingleLineUsage(System.out);
         System.out.println();
@@ -52,71 +57,66 @@ public class main {
         System.out.println();
         System.out.println();
 
+
+        String currentDir = System.getProperty("user.dir");
         try {
             parser.parseArgument(argsStr);
         } catch (CmdLineException e) {
-            exitcode = 20;
+            exitcode = WRONG_CLI_ARG;
             errorMessage = e.getMessage();
-            printHelp(parser,errorMessage);
+            printHelp(parser, errorMessage);
         }
+
         if (exitcode == 0) {
             VCSManager gitManager = null;
             try {
                 gitManager = GitManager.getInstance();
             } catch (VCSRemoteConnectionException e) {
-                exitcode = -30;
+                exitcode = REPO_CONNECTION_ERROR;
                 errorMessage = e.getMessage();
             } catch (VcsUnknownException e) {
-                exitcode = 10;
+                exitcode = UNKNOWN_ERROR;
                 errorMessage = e.getMessage();
-            } catch (VCSWrongRemoteRepoException e) {
-                exitcode = -20;
+            } catch (VcsRepositoryException e) {
+                exitcode = REPO_ERROR;
                 errorMessage = e.getMessage();
-            } catch (VCSWrongLocalRepoException e) {
-                e.printStackTrace();
             }
             if (exitcode == 0) {
                 if (gitManager.isValidRefName(args.getNamePrefix())) {
                     //create commit
-                    if (args.getBuildNumber() != 0 && args.getCommitRev() != null) {
-                        if (args.getBuildNumber() > 0) {
-                            if (gitManager.isValidCommitRev(args.getCommitRev())) {
-                                String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
-                                try {
-                                    gitManager.createTag(tagName, args.getCommitRev());
-                                } catch (VCSCommitNotFoundException e) {
-                                    exitcode = -60;
-                                    errorMessage = e.getMessage();
-                                } catch (VCSInvalidTagNameException e) {
-                                    exitcode = -70;
-                                    errorMessage = e.getMessage();
-                                } catch (VcsCommonFatalRepositoryException e) {
-                                    exitcode = -80;
-                                    errorMessage = e.getMessage();
-                                } catch (VCSRemoteConnectionException e) {
-                                    exitcode = -90;
-                                    errorMessage = e.getMessage();
-                                } catch (VcsUnknownException e) {
-                                    exitcode = 10;
-                                    errorMessage = e.getMessage();
-                                }
-                            } else {
-                                exitcode = -150;
-                                errorMessage = "Invalid commit revision number: " + args.getCommitRev();
+                    if (args.getBuildNumber() > 0) {
+                        if (gitManager.isValidCommitRev(args.getCommitRev())) {
+                            String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
+                            try {
+                                gitManager.createTag(tagName, args.getCommitRev());
+                            } catch (VCSCommitNotFoundException e) {
+                                exitcode = -60;
+                                errorMessage = e.getMessage();
+                            } catch (VCSInvalidTagNameException e) {
+                                exitcode = -70;
+                                errorMessage = e.getMessage();
+                            } catch (VcsRepositoryException e) {
+                                exitcode = REPO_ERROR;
+                                errorMessage = e.getMessage();
+                            } catch (VCSRemoteConnectionException e) {
+                                exitcode = REPO_CONNECTION_ERROR;
+                                errorMessage = e.getMessage();
+                            } catch (VcsUnknownException e) {
+                                exitcode = UNKNOWN_ERROR;
+                                errorMessage = e.getMessage();
                             }
                         } else {
-                            exitcode = -160;
-                            errorMessage = "Invalid build namber: " + args.getBuildNumber();
+                            exitcode = WRONG_CLI_ARG;
+                            errorMessage = "Invalid commit revision number: " + args.getCommitRev()+"\n It must be commit revision id (SHA-1)";
                         }
                     } else {
-                        exitcode = -170;
-                        errorMessage = "You must specify build number and commit revision number";
-
+                        exitcode = WRONG_CLI_ARG;
+                        errorMessage = "Invalid build number: " + args.getBuildNumber();
                     }
+
                 } else {
-                    exitcode = -50;
+                    exitcode = WRONG_CLI_ARG;
                     errorMessage = "Invalid name prefix " + args.getNamePrefix();
-                    printError(exitcode, errorMessage);
                 }
                 if (exitcode == 0) {
                     if (args.getTagsToKeep() > -1) {//delete unnecessary tags
@@ -126,13 +126,13 @@ public class main {
                             exitcode = -110;
                             errorMessage = e.getMessage();
                         } catch (VCSRemoteConnectionException e) {
-                            exitcode = -120;
+                            exitcode = REPO_CONNECTION_ERROR;
                             errorMessage = e.getMessage();
-                        } catch (VcsCommonFatalRepositoryException e) {
-                            exitcode = -130;
+                        } catch (VcsRepositoryException e) {
+                            exitcode = REPO_ERROR;
                             errorMessage = e.getMessage();
                         } catch (VcsUnknownException e) {
-                            exitcode = 10;
+                            exitcode = UNKNOWN_ERROR;
                             errorMessage = e.getMessage();
                         }
                     }
@@ -141,6 +141,8 @@ public class main {
         }
         if (exitcode != 0) {
             System.err.println(errorMessage);
+            printError(exitcode, errorMessage);
+
             System.exit(exitcode);
         }
     }
@@ -164,5 +166,5 @@ public class main {
     private static void printError(int statusCode, String message) {
         System.out.print("Error code=" + statusCode + "\t" + message);
     }
-
+//Moove into repo directory or spec parameter
 }
