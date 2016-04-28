@@ -32,9 +32,9 @@ public class GitManager implements VCSManager {
 
     private Git git;
     private Repository repo;
-    private String gitPathName;
     private Logger logger;
     private static GitManager gitManager;
+    private File gitDir;
     //ProgressMonitor progressMonitor;
 
 
@@ -44,18 +44,41 @@ public class GitManager implements VCSManager {
 
     public static VCSManager getInstance(String gitPathName) throws VCSRemoteConnectionException, VcsUnknownException, VCSWrongRemoteRepoException, VCSWrongLocalRepoException {
         if (gitManager == null) {
-            gitManager = new GitManager(gitPathName);
+            gitManager = createManager(gitPathName);
         }
         gitManager.fetchWithTags();
         return gitManager;
     }
 
-    private GitManager(String gitPathName) throws VCSWrongLocalRepoException {
-        if (gitPathName.endsWith(".git")) {
-            this.gitPathName = gitPathName;
-        } else {
-            this.gitPathName = gitPathName + File.separator + ".git";
+    /**
+     *
+     * @param gitPathName Path to local repository, must be parent folder for .git or the .git folder
+     * @throws VCSWrongLocalRepoException
+     */
+    private GitManager (String gitPathName) throws VCSWrongLocalRepoException {
+        File tf = new File(gitPathName);
+        if (tf.exists()) {
+            if (tf.getName().equals(".git")) {
+                if (tf.isDirectory()) {
+                    gitDir = tf;
+                } else {
+                    throw new VCSWrongLocalRepoException("Wrong local repo folder ", tf);
+                }
+            } else {
+                File[] files = tf.listFiles();
+                Optional<File> first = Arrays.stream(files).filter(tempFile -> tempFile.isDirectory() && tempFile.getName().equals(".git")).findFirst();
+
+                try {
+                    gitDir = first.get();
+                } catch (Throwable e) {
+                    throw new VCSWrongLocalRepoException("Wrong local repo folder ", tf);
+                }
+            }
         }
+        else{
+            throw new VCSWrongLocalRepoException("Wrong local repo folder ", tf);
+        }
+
         setRepository();
         git = new Git(repo);
         logger = LoggerFactory.getLogger(GitManager.class);
@@ -155,13 +178,12 @@ public class GitManager implements VCSManager {
     }
 
     private void setRepository() throws VCSWrongLocalRepoException {
-        File gitDir = new File(gitPathName);
         FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitDir).readEnvironment()// scan environment GIT_* variables
                 .findGitDir();// scan up the file system tree
         try {
             repo = builder.build();
         } catch (IOException e) {
-            throw new VCSWrongLocalRepoException("Can't create local repo in folder",gitDir, e);
+            throw new VCSWrongLocalRepoException("Can't create local repo in folder", gitDir, e);
         }
     }
 
@@ -170,9 +192,9 @@ public class GitManager implements VCSManager {
             FetchCommand fetch = git.fetch();
             //fetch.setProgressMonitor(progressMonitor);
             fetch.setTagOpt(TagOpt.FETCH_TAGS).call();
-            logger.debug("Fetch from "+getRemoteRepoURI()+" SUCCESS");
+            logger.debug("Fetch from " + getRemoteRepoURI() + " SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VCSWrongRemoteRepoException("Wrong remote repo: "+ getRemoteRepoURI(), e);
+            throw new VCSWrongRemoteRepoException("Wrong remote repo: " + getRemoteRepoURI(), e);
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Connection error: couldn't fetch", e);
         } catch (GitAPIException e) {
@@ -210,9 +232,9 @@ public class GitManager implements VCSManager {
         }
         try {
             git.push().setRefSpecs(refsForRemoteDelete).call();
-            logger.debug("Delete tags from remote repo "+getRemoteRepoURI()+" SUCCESS");
+            logger.debug("Delete tags from remote repo " + getRemoteRepoURI() + " SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VCSWrongRemoteRepoException("Wrong remote repo: "+ getRemoteRepoURI(), e);
+            throw new VCSWrongRemoteRepoException("Wrong remote repo: " + getRemoteRepoURI(), e);
         } catch (TransportException e) {
             throw new VCSRemoteConnectionException("Connection error: couldn't connect to remote repo for delete", e);
         } catch (GitAPIException e) {

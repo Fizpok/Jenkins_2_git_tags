@@ -9,4 +9,9 @@ public class VCSWrongLocalRepoException extends VcsRepositoryException {
     public VCSWrongLocalRepoException(String s, File gitDir, Throwable e) {
         super(s+" "+gitDir.getAbsolutePath(),e);
     }
+
+    public VCSWrongLocalRepoException(String s, File gitDir) {
+        super(s+" "+gitDir.getAbsolutePath());
+    }
+
 }
