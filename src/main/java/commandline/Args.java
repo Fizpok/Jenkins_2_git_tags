@@ -21,6 +21,9 @@ public class Args implements Serializable {
     @Option(name = "-keep", aliases = {"-k"}, usage = "3. Set tags count with this name prefix to keep", required = false, metaVar = "Integer")
     private int tagsToKeep=-1;
 
+    @Option(name = "-repo_path", aliases = {"-rp"}, usage = "4. Set local repository path (with or without .git)", required = false, metaVar = "String")
+    private String repoPath;
+
     public String getNamePrefix() {
         return namePrefix;
     }
@@ -35,6 +38,10 @@ public class Args implements Serializable {
 
     public int getTagsToKeep() {
         return tagsToKeep;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
     }
 
     @Override

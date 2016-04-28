@@ -37,12 +37,16 @@ public class GitManager implements VCSManager {
     private File gitDir;
     //ProgressMonitor progressMonitor;
 
-
-    public static VCSManager getInstance() throws VCSRemoteConnectionException, VcsUnknownException, VCSWrongRemoteRepoException, VCSWrongLocalRepoException {
-        return getInstance("C:\\Git\\Jenkins\\mqm_for_jenkins_git");
-    }
-
-    public static VCSManager getInstance(String gitPathName) throws VCSRemoteConnectionException, VcsUnknownException, VCSWrongRemoteRepoException, VCSWrongLocalRepoException {
+    /**
+     *
+     * @param gitPathName Path to local repository, must be parent folder for .git or the .git folder
+     * @return Singleton instance of GitManager
+     * @throws VCSRemoteConnectionException
+     * @throws VcsUnknownException
+     * @throws VCSWrongRemoteRepoException
+     * @throws VCSWrongLocalRepoException
+     */
+    public static VCSManager getInstance(String gitPathName) throws VCSRemoteConnectionException, VcsUnknownException, VCSWrongLocalRepoException, VCSWrongRemoteRepoException {
         if (gitManager == null) {
             gitManager = createManager(gitPathName);
         }
@@ -50,39 +54,36 @@ public class GitManager implements VCSManager {
         return gitManager;
     }
 
-    /**
-     *
-     * @param gitPathName Path to local repository, must be parent folder for .git or the .git folder
-     * @throws VCSWrongLocalRepoException
-     */
-    private GitManager (String gitPathName) throws VCSWrongLocalRepoException {
+    private static GitManager createManager(String gitPathName) throws VCSWrongLocalRepoException {
+        GitManager result = new GitManager();
+        result.logger = LoggerFactory.getLogger(GitManager.class);
         File tf = new File(gitPathName);
         if (tf.exists()) {
             if (tf.getName().equals(".git")) {
                 if (tf.isDirectory()) {
-                    gitDir = tf;
+                    result.gitDir = tf;
                 } else {
                     throw new VCSWrongLocalRepoException("Wrong local repo folder ", tf);
                 }
             } else {
                 File[] files = tf.listFiles();
                 Optional<File> first = Arrays.stream(files).filter(tempFile -> tempFile.isDirectory() && tempFile.getName().equals(".git")).findFirst();
-
                 try {
-                    gitDir = first.get();
+                    result.gitDir = first.get();
                 } catch (Throwable e) {
                     throw new VCSWrongLocalRepoException("Wrong local repo folder ", tf);
                 }
             }
-        }
-        else{
+        } else {
             throw new VCSWrongLocalRepoException("Wrong local repo folder ", tf);
         }
-
-        setRepository();
-        git = new Git(repo);
-        logger = LoggerFactory.getLogger(GitManager.class);
+        result.logger.debug("Git local repo folder is: \""+result.gitDir.getAbsolutePath()+"\"");
+        setRepository(result);
+        result.git = new Git(result.repo);
+        return result;
     }
+
+    private GitManager() {}
 
     @Override
     public void createTag(String tagName, String commitRevision) throws VCSCommitNotFoundException, VcsUnknownException, VCSInvalidTagNameException, VcsRepositoryException, VCSRemoteConnectionException {
@@ -177,13 +178,13 @@ public class GitManager implements VCSManager {
         }
     }
 
-    private void setRepository() throws VCSWrongLocalRepoException {
-        FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitDir).readEnvironment()// scan environment GIT_* variables
+    private static void setRepository(GitManager gitManager) throws VCSWrongLocalRepoException {
+        FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitManager.gitDir).readEnvironment()// scan environment GIT_* variables
                 .findGitDir();// scan up the file system tree
         try {
-            repo = builder.build();
+            gitManager.repo = builder.build();
         } catch (IOException e) {
-            throw new VCSWrongLocalRepoException("Can't create local repo in folder", gitDir, e);
+            throw new VCSWrongLocalRepoException("Can't create local repo in folder", gitManager.gitDir, e);
         }
     }
 

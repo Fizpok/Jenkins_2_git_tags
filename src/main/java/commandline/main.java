@@ -19,8 +19,11 @@ public class main {
     private static final int WRONG_CLI_ARG = 20;
     private static final int REPO_ERROR = 30;
     private static final int REPO_CONNECTION_ERROR = 40;
+    private static final int TAG_NOT_FOUND_ERROR = 50;
+    private static final int INVALID_TAG_NAME_ERROR = 55;
+    private static final int COMMIT_NOT_FOUND_ERROR = 60;
 
-    public static void main(String[] argsStr) {
+    public static void main(String[] argsStrArr) {
         //The ASCII art created by http://patorjk.com/software/taag/
         System.out.println("     _      U _____ u   _   _        _  __                    _   _       ____     \n" +
                 "  U |\"| u   \\| ___\"|/  | \\ |\"|      |\"|/ /         ___       | \\ |\"|     / __\"| u  \n" +
@@ -46,31 +49,27 @@ public class main {
         int exitcode = 0;
         String errorMessage = "";
         Args args = new Args();
+
         Comparator<OptionHandler> sorter = (o1, o2) -> o1.option.usage().compareTo(o2.option.usage());
-        ParserProperties parser2Properties = ParserProperties.defaults().withShowDefaults(false).withOptionSorter(sorter);
-        CmdLineParser parser = new CmdLineParser(args, parser2Properties);
+        ParserProperties parserProperties = ParserProperties.defaults().withShowDefaults(false).withOptionSorter(sorter);
+        CmdLineParser cmdLineParser = new CmdLineParser(args, parserProperties);
 
-        parser.printSingleLineUsage(System.out);
-        System.out.println();
-        System.out.println();
-        parser.printUsage(System.out);
-        System.out.println();
-        System.out.println();
-
-
-        String currentDir = System.getProperty("user.dir");
         try {
-            parser.parseArgument(argsStr);
+            cmdLineParser.parseArgument(argsStrArr);
         } catch (CmdLineException e) {
             exitcode = WRONG_CLI_ARG;
             errorMessage = e.getMessage();
-            printHelp(parser, errorMessage);
         }
-
         if (exitcode == 0) {
+            String repoPath;
+            if (args.getRepoPath() == null) {
+                repoPath = System.getProperty("user.dir");
+            } else {
+                repoPath = args.getRepoPath();
+            }
             VCSManager gitManager = null;
             try {
-                gitManager = GitManager.getInstance();
+                gitManager = GitManager.getInstance(repoPath);
             } catch (VCSRemoteConnectionException e) {
                 exitcode = REPO_CONNECTION_ERROR;
                 errorMessage = e.getMessage();
@@ -90,10 +89,10 @@ public class main {
                             try {
                                 gitManager.createTag(tagName, args.getCommitRev());
                             } catch (VCSCommitNotFoundException e) {
-                                exitcode = -60;
+                                exitcode = COMMIT_NOT_FOUND_ERROR;
                                 errorMessage = e.getMessage();
                             } catch (VCSInvalidTagNameException e) {
-                                exitcode = -70;
+                                exitcode = INVALID_TAG_NAME_ERROR;
                                 errorMessage = e.getMessage();
                             } catch (VcsRepositoryException e) {
                                 exitcode = REPO_ERROR;
@@ -107,13 +106,12 @@ public class main {
                             }
                         } else {
                             exitcode = WRONG_CLI_ARG;
-                            errorMessage = "Invalid commit revision number: " + args.getCommitRev()+"\n It must be commit revision id (SHA-1)";
+                            errorMessage = "Illegal commit revision id: " + args.getCommitRev() + "\n It must be commit revision id (SHA-1)";
                         }
                     } else {
                         exitcode = WRONG_CLI_ARG;
-                        errorMessage = "Invalid build number: " + args.getBuildNumber();
+                        errorMessage = "Illegal build number: " + args.getBuildNumber();
                     }
-
                 } else {
                     exitcode = WRONG_CLI_ARG;
                     errorMessage = "Invalid name prefix " + args.getNamePrefix();
@@ -123,7 +121,7 @@ public class main {
                         try {
                             gitManager.deleteTags(args.getNamePrefix(), args.getTagsToKeep());
                         } catch (VCSTagNotFoundException e) {
-                            exitcode = -110;
+                            exitcode = TAG_NOT_FOUND_ERROR;
                             errorMessage = e.getMessage();
                         } catch (VCSRemoteConnectionException e) {
                             exitcode = REPO_CONNECTION_ERROR;
@@ -140,15 +138,17 @@ public class main {
             }
         }
         if (exitcode != 0) {
-            System.err.println(errorMessage);
-            printError(exitcode, errorMessage);
-
+            if (exitcode == WRONG_CLI_ARG) {
+                printHelp(cmdLineParser, errorMessage);
+            } else {
+                printError(exitcode, errorMessage);
+            }
             System.exit(exitcode);
         }
     }
 
     private static void printHelp(CmdLineParser parser, String errorMessage) {
-        System.err.println("errorMessage");
+        System.err.println("errorMessage: " + errorMessage);
         parser.printUsage(System.out);
 
 
@@ -164,7 +164,7 @@ public class main {
     }
 
     private static void printError(int statusCode, String message) {
-        System.out.print("Error code=" + statusCode + "\t" + message);
+        System.out.println("Error code = " + statusCode + "\t" + message);
     }
 //Moove into repo directory or spec parameter
 }
