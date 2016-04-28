@@ -70,13 +70,13 @@ public class main {
             VCSManager gitManager = null;
             try {
                 gitManager = GitManager.getInstance(repoPath);
-            } catch (_VcsRemoteConnectionException e) {
+            } catch (VcsRemoteConnectionException e) {
                 exitcode = REPO_CONNECTION_ERROR;
                 errorMessage = e.getMessage();
             } catch (VcsUnknownException e) {
                 exitcode = UNKNOWN_ERROR;
                 errorMessage = e.getMessage();
-            } catch (_VcsRepositoryException e) {
+            } catch (VcsRepositoryException e) {
                 exitcode = REPO_ERROR;
                 errorMessage = e.getMessage();
             }
@@ -88,16 +88,16 @@ public class main {
                             String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
                             try {
                                 gitManager.createTag(tagName, args.getCommitRev());
-                            } catch (_VcsCommitNotFoundException e) {
+                            } catch (VcsCommitNotFoundException e) {
                                 exitcode = COMMIT_NOT_FOUND_ERROR;
                                 errorMessage = e.getMessage();
-                            } catch (_VcsInvalidTagNameException e) {
+                            } catch (VcsInvalidTagNameException e) {
                                 exitcode = INVALID_TAG_NAME_ERROR;
                                 errorMessage = e.getMessage();
-                            } catch (_VcsRepositoryException e) {
+                            } catch (VcsRepositoryException e) {
                                 exitcode = REPO_ERROR;
                                 errorMessage = e.getMessage();
-                            } catch (_VcsRemoteConnectionException e) {
+                            } catch (VcsRemoteConnectionException e) {
                                 exitcode = REPO_CONNECTION_ERROR;
                                 errorMessage = e.getMessage();
                             } catch (VcsUnknownException e) {
@@ -120,13 +120,13 @@ public class main {
                     if (args.getTagsToKeep() > -1) {//delete unnecessary tags
                         try {
                             gitManager.deleteTags(args.getNamePrefix(), args.getTagsToKeep());
-                        } catch (_VcsTagNotFoundException e) {
+                        } catch (VcsTagNotFoundException e) {
                             exitcode = TAG_NOT_FOUND_ERROR;
                             errorMessage = e.getMessage();
-                        } catch (_VcsRemoteConnectionException e) {
+                        } catch (VcsRemoteConnectionException e) {
                             exitcode = REPO_CONNECTION_ERROR;
                             errorMessage = e.getMessage();
-                        } catch (_VcsRepositoryException e) {
+                        } catch (VcsRepositoryException e) {
                             exitcode = REPO_ERROR;
                             errorMessage = e.getMessage();
                         } catch (VcsUnknownException e) {
