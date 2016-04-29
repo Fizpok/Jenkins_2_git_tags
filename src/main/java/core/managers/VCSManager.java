@@ -13,5 +13,5 @@ public interface VCSManager {
 
     boolean isValidCommitRev(String commitRev);
 
-    boolean isValidRefName(String namePrefix);
+    boolean isValidTagName(String namePrefix);
 }

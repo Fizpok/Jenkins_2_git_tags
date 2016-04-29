@@ -77,7 +77,7 @@ public class main {
                 errorMessage = e.getMessage();
             }
             if (exitcode == 0) {
-                if (gitManager.isValidRefName(args.getNamePrefix())) {
+                if (gitManager.isValidTagName(args.getNamePrefix())) {
                     //create commit
                     if (args.getBuildNumber() > 0) {
                         if (gitManager.isValidCommitRev(args.getCommitRev())) {

@@ -285,7 +285,7 @@ public class GitManager implements VCSManager {
     }
 
     @Override
-    public boolean isValidRefName(String namePrefix) {
+    public boolean isValidTagName(String namePrefix) {
         return Validator.isValidGitRefName(namePrefix);
     }
 
