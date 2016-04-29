@@ -6,9 +6,6 @@ import exceptions.*;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.ParserProperties;
-import org.kohsuke.args4j.spi.OptionHandler;
-
-import java.util.Comparator;
 
 /**
  * Created by Evgeney Fiskin on 31-03-2016.
@@ -25,33 +22,32 @@ public class main {
 
     public static void main(String[] argsStrArr) {
         //The ASCII art created by http://patorjk.com/software/taag/
-        System.out.println("     _      U _____ u   _   _        _  __                    _   _       ____     \n" +
-                "  U |\"| u   \\| ___\"|/  | \\ |\"|      |\"|/ /         ___       | \\ |\"|     / __\"| u  \n" +
-                " _ \\| |/     |  _|\"   <|  \\| |>     | ' /         |_\"_|     <|  \\| |>   <\\___ \\/   \n" +
-                "| |_| |_,-.  | |___   U| |\\  |u   U/| . \\\\u        | |      U| |\\  |u    u___) |   \n" +
-                " \\___/-(_/   |_____|   |_| \\_|      |_|\\_\\       U/| |\\u     |_| \\_|     |____/>>  \n" +
-                "  _//        <<   >>   ||   \\\\,-. ,-,>> \\\\,-. .-,_|___|_,-.  ||   \\\\,-.   )(  (__) \n" +
-                " (__)       (__) (__)  (_\")  (_/   \\.)   (_/   \\_)-' '-(_/   (_\")  (_/   (__)      \n" +
-                "                                      ____                                         \n" +
-                "                                     |___\"\\                                        \n" +
-                "                                     U __) |                                       \n" +
-                "                                     \\/ __/ \\                                      \n" +
-                "                                     |_____|u                                      \n" +
-                "                                     <<  //                                        \n" +
-                "                                    (__)(__)                                       \n" +
-                " __     __      ____    ____           _____       _         ____     ____         \n" +
-                " \\ \\   /\"/u  U /\"___|  / __\"| u       |_ \" _|  U  /\"\\  u  U /\"___|u  / __\"| u      \n" +
-                "  \\ \\ / //   \\| | u   <\\___ \\/          | |     \\/ _ \\/   \\| |  _ / <\\___ \\/       \n" +
-                "  /\\ V /_,-.  | |/__   u___) |         /| |\\    / ___ \\    | |_| |   u___) |       \n" +
-                " U  \\_/-(_/    \\____|  |____/>>       u |_|U   /_/   \\_\\    \\____|   |____/>>      \n" +
-                "   //         _// \\\\    )(  (__)      _// \\\\_   \\\\    >>    _)(|_     )(  (__)     \n" +
-                "  (__)       (__)(__)  (__)          (__) (__) (__)  (__)  (__)__)   (__)          ");
+        System.out.println("  _______               \\                           \n" +
+                " '   /      ___  , __   |   , ` , __     ____       \n" +
+                "     |    .'   ` |'  `. |  /  | |'  `.  (           \n" +
+                "     |    |----' |    | |-<   | |    |  `--.        \n" +
+                "  `--/    `.___, /    | /  \\_ / /    | \\___.'       \n" +
+                "                                                    \n" +
+                "                 ___                                \n" +
+                "                /   \\                               \n" +
+                "                  _-'                               \n" +
+                "                 /                                  \n" +
+                "                /___,                               \n" +
+                "                                                    \n" +
+                " __    __   ___    _____       _______              \n" +
+                " |     |  .'   \\  (           '   /      ___    ___.\n" +
+                "  \\    /  |        `--.           |     /   ` .'   `\n" +
+                "   \\  /   |           |           |    |    | |    |\n" +
+                "    \\/     `.__, \\___.'           /    `.__/|  `---|\n" +
+                "                                               \\___/\n");
         int exitcode = 0;
         String errorMessage = "";
         Args args = new Args();
 
-        Comparator<OptionHandler> sorter = (o1, o2) -> o1.option.usage().compareTo(o2.option.usage());
-        ParserProperties parserProperties = ParserProperties.defaults().withShowDefaults(false).withOptionSorter(sorter);
+        ParserProperties parserProperties = ParserProperties.defaults()
+                .withShowDefaults(false)
+                .withOptionSorter((o1, o2) -> o1.option.usage().compareTo(o2.option.usage()))
+                .withUsageWidth(80);
         CmdLineParser cmdLineParser = new CmdLineParser(args, parserProperties);
 
         try {
@@ -148,7 +144,9 @@ public class main {
     }
 
     private static void printHelp(CmdLineParser parser, String errorMessage) {
-        System.err.println("errorMessage: " + errorMessage);
+        System.err.println("Error: " + errorMessage + "\n\n");
+        parser.printSingleLineUsage(System.out);
+        System.out.println();
         parser.printUsage(System.out);
 
 
@@ -164,7 +162,7 @@ public class main {
     }
 
     private static void printError(int statusCode, String message) {
-        System.out.println("Error code = " + statusCode + "\t" + message);
+        System.err.println("Error code = " + statusCode + "\t" + message);
     }
 //Moove into repo directory or spec parameter
 }

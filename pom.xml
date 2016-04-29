@@ -11,11 +11,6 @@
         <jgit.provider.version>4.2.0.201601211800-r</jgit.provider.version>
     </properties>
     <dependencies>
-        <!--<dependency>-->
-            <!--<groupId>org.apache.maven.scm</groupId>-->
-            <!--<artifactId>maven-scm-provider-jgit</artifactId>-->
-            <!--<version>1.9</version>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
@@ -31,48 +26,47 @@
             <artifactId>args4j</artifactId>
             <version>2.33</version>
         </dependency>
-
     </dependencies>
     <profiles>
         <!--<profile>-->
-            <!--<id>dependencies_in_lib</id>-->
-            <!--<build>-->
-                <!--<plugins>-->
-                    <!--<plugin>-->
-                        <!--<groupId>org.apache.maven.plugins</groupId>-->
-                        <!--<artifactId>maven-jar-plugin</artifactId>-->
-                        <!--<version>2.3.1</version>-->
-                        <!--<configuration>-->
-                            <!--<archive>-->
-                                <!--<manifest>-->
-                                    <!--<addClasspath>true</addClasspath>-->
-                                    <!--<mainClass>commandline.main</mainClass>-->
-                                    <!--<packageName>commandline</packageName>-->
-                                    <!--<classpathPrefix>lib/</classpathPrefix>-->
-                                <!--</manifest>-->
-                            <!--</archive>-->
-                        <!--</configuration>-->
-                    <!--</plugin>-->
-                    <!--<plugin>-->
-                        <!--<groupId>org.apache.maven.plugins</groupId>-->
-                        <!--<artifactId>maven-dependency-plugin</artifactId>-->
-                        <!--<version>2.4</version>-->
-                        <!--<executions>-->
-                            <!--<execution>-->
-                                <!--<id>copy-dependencies</id>-->
-                                <!--<phase>package</phase>-->
-                                <!--<goals>-->
-                                    <!--<goal>copy-dependencies</goal>-->
-                                <!--</goals>-->
-                                <!--<configuration>-->
-                                    <!--<includeScope>compile</includeScope>-->
-                                    <!--<outputDirectory>${project.build.directory}/lib</outputDirectory>-->
-                                <!--</configuration>-->
-                            <!--</execution>-->
-                        <!--</executions>-->
-                    <!--</plugin>-->
-                <!--</plugins>-->
-            <!--</build>-->
+        <!--<id>dependencies_in_lib</id>-->
+        <!--<build>-->
+        <!--<plugins>-->
+        <!--<plugin>-->
+        <!--<groupId>org.apache.maven.plugins</groupId>-->
+        <!--<artifactId>maven-jar-plugin</artifactId>-->
+        <!--<version>2.3.1</version>-->
+        <!--<configuration>-->
+        <!--<archive>-->
+        <!--<manifest>-->
+        <!--<addClasspath>true</addClasspath>-->
+        <!--<mainClass>commandline.main</mainClass>-->
+        <!--<packageName>commandline</packageName>-->
+        <!--<classpathPrefix>lib/</classpathPrefix>-->
+        <!--</manifest>-->
+        <!--</archive>-->
+        <!--</configuration>-->
+        <!--</plugin>-->
+        <!--<plugin>-->
+        <!--<groupId>org.apache.maven.plugins</groupId>-->
+        <!--<artifactId>maven-dependency-plugin</artifactId>-->
+        <!--<version>2.4</version>-->
+        <!--<executions>-->
+        <!--<execution>-->
+        <!--<id>copy-dependencies</id>-->
+        <!--<phase>package</phase>-->
+        <!--<goals>-->
+        <!--<goal>copy-dependencies</goal>-->
+        <!--</goals>-->
+        <!--<configuration>-->
+        <!--<includeScope>compile</includeScope>-->
+        <!--<outputDirectory>${project.build.directory}/lib</outputDirectory>-->
+        <!--</configuration>-->
+        <!--</execution>-->
+        <!--</executions>-->
+        <!--</plugin>-->
+        <!--</plugins>-->
+        <!--</build>-->
         <!--</profile>-->
         <profile>
             <id>dependencies_in_jar</id>
@@ -84,14 +78,13 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <!--<configuration>-->
-                        <!--<finalName>mapc</finalName>-->
-                        <!--<archive>-->
-                        <!--<manifest>-->
-                        <!--<mainClass>commandline.main</mainClass>-->
-                        <!--</manifest>-->
-                        <!--</archive>-->
-                        <!--</configuration>-->
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>commandline.main</mainClass>
+                                </manifest>
+                            </archive>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>create-my-bundle</id>
