@@ -19,6 +19,7 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.TagOpt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.Validator;
 
 import java.io.File;
 import java.io.IOException;
@@ -280,25 +281,12 @@ public class GitManager implements VCSManager {
 
     @Override
     public boolean isValidCommitRev(String commitRev) {
-        return commitRev.matches("^[0-9a-fA-F]{40}$");
+        return Validator.isValidGitCommitRev(commitRev);
     }
 
     @Override
     public boolean isValidRefName(String namePrefix) {
-        boolean isValid;
-        if (namePrefix == null || namePrefix.isEmpty()) {
-            isValid = false;
-        } else {
-            isValid = true;
-            isValid &= namePrefix.matches("^[^@/][\\d\\w!@#$%&_\\.]+[^\\.]$");
-            isValid &= !namePrefix.matches(".*\\.lock$");
-            isValid &= !namePrefix.matches("\\.\\.");
-            isValid &= !namePrefix.matches("\\\\");
-            isValid &= !namePrefix.matches("^/");
-            isValid &= !namePrefix.matches("/$");
-            isValid &= !namePrefix.matches("@\\{");
-        }
-        return isValid;
+        return Validator.isValidGitRefName(namePrefix);
     }
 
 }
