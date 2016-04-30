@@ -31,7 +31,7 @@ import java.util.*;
 /**
  * Created by Evgeney Fiskin on Apr-2016.
  */
-public class GitManager implements VCSManager {
+public class GitManager implements _VcsManager {
 
     private Git git;
     private Repository repo;
@@ -50,7 +50,7 @@ public class GitManager implements VCSManager {
      * @throws VcsWrongRemoteRepoException
      * @throws VcsWrongLocalRepoException
      */
-    public static VCSManager getInstance(String gitPathName) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
+    public static _VcsManager getInstance(String gitPathName) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
         if (gitManager == null) {
             gitManager = createManager(gitPathName);
         }
@@ -58,7 +58,7 @@ public class GitManager implements VCSManager {
         return gitManager;
     }
 
-    public static VCSManager getInstance(File gitPath) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
+    public static _VcsManager getInstance(File gitPath) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
         if (gitManager == null) {
             gitManager = createManager(gitPath);
         }
