@@ -31,7 +31,7 @@ import java.util.*;
 /**
  * Created by Evgeney Fiskin on Apr-2016.
  */
-public class GitManager implements _VcsManager {
+public class GitManager implements VcsManager {
 
     private Git git;
     private Repository repo;
@@ -50,7 +50,7 @@ public class GitManager implements _VcsManager {
      * @throws VcsWrongRemoteRepoException
      * @throws VcsWrongLocalRepoException
      */
-    public static _VcsManager getInstance(String gitPathName) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
+    public static VcsManager getInstance(String gitPathName) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
         if (gitManager == null) {
             gitManager = createManager(gitPathName);
         }
@@ -58,7 +58,7 @@ public class GitManager implements _VcsManager {
         return gitManager;
     }
 
-    public static _VcsManager getInstance(File gitPath) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
+    public static VcsManager getInstance(File gitPath) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
         if (gitManager == null) {
             gitManager = createManager(gitPath);
         }
@@ -261,7 +261,7 @@ public class GitManager implements _VcsManager {
         Collection<Ref> refTags = repo.getTags().values();
         RevWalk revWalk = new RevWalk(repo);
         ArrayList<RevTag> resultRevTags = new ArrayList<>();
-        int maxTagNameLength = refTags.stream().max((tempTag1, tempTag2) -> Integer.compareUnsigned(tempTag1.getName().length(), tempTag2.getName().length())).get().getName().length() - 10;
+        int maxTagNameLength = refTags.stream().max((tempTag1, tempTag2) -> Integer.compare(tempTag1.getName().length(), tempTag2.getName().length())).get().getName().length() - 10;
         for (Ref refObject : refTags) {
             ObjectId objectId = refObject.getObjectId();
             int objectType = 0;

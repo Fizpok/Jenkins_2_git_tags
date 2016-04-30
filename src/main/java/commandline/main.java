@@ -1,7 +1,7 @@
 package commandline;
 
 import core.managers.GitManager;
-import core.managers._VcsManager;
+import core.managers.VcsManager;
 import exceptions.*;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -57,7 +57,7 @@ public class main {
             errorMessage = e.getMessage();
         }
         if (exitcode == 0) {
-            _VcsManager gitManager = null;
+            VcsManager gitManager = null;
             try {
                 if (args.getRepoPath() == null) {
                     gitManager = GitManager.getInstance(System.getProperty("user.dir"));
