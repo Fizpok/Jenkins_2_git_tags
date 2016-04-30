@@ -6,7 +6,7 @@
 
     <groupId>com.hpe</groupId>
     <artifactId>jenkins2vcs_tag</artifactId>
-    <version>1.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <properties>
         <jgit.provider.version>4.2.0.201601211800-r</jgit.provider.version>
     </properties>
@@ -15,6 +15,12 @@
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>${jgit.provider.version}</version>
+            <!--<exclusions>-->
+            <!--<exclusion>-->
+            <!--<groupId>org.slf4j</groupId>-->
+            <!--<artifactId>slf4j-api</artifactId>-->
+            <!--</exclusion>-->
+            <!--</exclusions>-->
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

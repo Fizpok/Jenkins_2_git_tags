@@ -2,6 +2,7 @@ package commandline;
 
 import org.kohsuke.args4j.Option;
 
+import java.io.File;
 import java.io.Serializable;
 
 /**
@@ -22,7 +23,7 @@ public class Args implements Serializable {
     private int tagsToKeep=-1;
 
     @Option(name = "-repo_path", aliases = {"-rp"}, usage = "4. Set local repository path (with or without .git)", required = false, metaVar = "String")
-    private String repoPath;
+    private File repoPath;
 
     public String getNamePrefix() {
         return namePrefix;
@@ -40,7 +41,7 @@ public class Args implements Serializable {
         return tagsToKeep;
     }
 
-    public String getRepoPath() {
+    public File getRepoPath() {
         return repoPath;
     }
 

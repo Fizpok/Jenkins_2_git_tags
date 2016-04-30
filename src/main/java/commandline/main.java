@@ -57,15 +57,13 @@ public class main {
             errorMessage = e.getMessage();
         }
         if (exitcode == 0) {
-            String repoPath;
-            if (args.getRepoPath() == null) {
-                repoPath = System.getProperty("user.dir");
-            } else {
-                repoPath = args.getRepoPath();
-            }
             VCSManager gitManager = null;
             try {
-                gitManager = GitManager.getInstance(repoPath);
+                if (args.getRepoPath() == null) {
+                    gitManager = GitManager.getInstance(System.getProperty("user.dir"));
+                } else {
+                    gitManager = GitManager.getInstance(args.getRepoPath());
+                }
             } catch (VcsRemoteConnectionException e) {
                 exitcode = REPO_CONNECTION_ERROR;
                 errorMessage = e.getMessage();
@@ -146,7 +144,7 @@ public class main {
     private static void printHelp(CmdLineParser parser, String errorMessage) {
         System.err.println("Error: " + errorMessage + "\n\n");
         parser.printSingleLineUsage(System.out);
-        System.out.println();
+        System.out.println("\n");
         parser.printUsage(System.out);
 
 

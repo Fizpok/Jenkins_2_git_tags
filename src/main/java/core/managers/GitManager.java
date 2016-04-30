@@ -8,6 +8,7 @@ import org.eclipse.jgit.api.TagCommand;
 import org.eclipse.jgit.api.errors.*;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -19,12 +20,12 @@ import org.eclipse.jgit.transport.RefSpec;
 import org.eclipse.jgit.transport.TagOpt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.Utils;
 import utils.Validator;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by Evgeney Fiskin on Apr-2016.
@@ -36,10 +37,11 @@ public class GitManager implements VCSManager {
     private Logger logger;
     private static GitManager gitManager;
     private File gitDir;
+    private PersonIdent personIdent;
+    private String remoteRepoUri;
     //ProgressMonitor progressMonitor;
 
     /**
-     *
      * @param gitPathName Path to local repository, must be parent folder for .git or the .git folder
      * @return Singleton instance of GitManager
      * @throws VcsRemoteConnectionException
@@ -55,36 +57,52 @@ public class GitManager implements VCSManager {
         return gitManager;
     }
 
-    private static GitManager createManager(String gitPathName) throws VcsWrongLocalRepoException {
+    public static VCSManager getInstance(File gitPath) throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongLocalRepoException, VcsWrongRemoteRepoException {
+        if (gitManager == null) {
+            gitManager = createManager(gitPath);
+        }
+        gitManager.fetchWithTags();
+        return gitManager;
+    }
+
+    private static GitManager createManager(File gitPath) throws VcsWrongLocalRepoException {
         GitManager result = new GitManager();
         result.logger = LoggerFactory.getLogger(GitManager.class);
-        File tf = new File(gitPathName);
-        if (tf.exists()) {
-            if (tf.getName().equals(".git")) {
-                if (tf.isDirectory()) {
-                    result.gitDir = tf;
+        if (gitPath.exists()) {
+            if (gitPath.getName().equals(".git")) {
+                if (gitPath.isDirectory()) {
+                    result.gitDir = gitPath;
                 } else {
-                    throw new VcsWrongLocalRepoException("Wrong local repo folder ", tf);
+                    throw new VcsWrongLocalRepoException("Wrong local repo folder ", gitPath);
                 }
             } else {
-                File[] files = tf.listFiles();
+                File[] files = gitPath.listFiles();
                 Optional<File> first = Arrays.stream(files).filter(tempFile -> tempFile.isDirectory() && tempFile.getName().equals(".git")).findFirst();
                 try {
                     result.gitDir = first.get();
                 } catch (Throwable e) {
-                    throw new VcsWrongLocalRepoException("Wrong local repo folder ", tf);
+                    throw new VcsWrongLocalRepoException("Wrong local repo folder ", gitPath);
                 }
             }
         } else {
-            throw new VcsWrongLocalRepoException("Wrong local repo folder ", tf);
+            throw new VcsWrongLocalRepoException("Wrong local repo folder ", gitPath);
         }
-        result.logger.debug("Git local repo folder is: \""+result.gitDir.getAbsolutePath()+"\"");
+        result.logger.debug("Git local repo folder is: \"" + result.gitDir.getAbsolutePath() + "\"");
         setRepository(result);
+        result.personIdent = new PersonIdent(result.repo);
         result.git = new Git(result.repo);
+        result.remoteRepoUri = result.repo.getConfig().getString("remote", "origin", "url");
         return result;
+
     }
 
-    private GitManager() {}
+    private static GitManager createManager(String gitPathName) throws VcsWrongLocalRepoException {
+        File gitPath = new File(gitPathName);
+        return createManager(gitPath);
+    }
+
+    private GitManager() {
+    }
 
     @Override
     public void createTag(String tagName, String commitRevision) throws VcsCommitNotFoundException, VcsUnknownException, VcsInvalidTagNameException, VcsRepositoryException, VcsRemoteConnectionException {
@@ -105,7 +123,7 @@ public class GitManager implements VCSManager {
                 StringBuilder sb = new StringBuilder().append("Commit ")
                         .append(commit.getName())
                         .append(" from ")
-                        .append(commit.getCommitTime())
+                        .append(Utils.convert(commit.getCommitTime()))
                         .append(" found.");
                 logger.debug(sb.toString());
                 commitRevObject = commit;
@@ -149,30 +167,28 @@ public class GitManager implements VCSManager {
     public void deleteTags(String namePrefix, int numberTagsToLeft) throws VcsTagNotFoundException, VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
         if (numberTagsToLeft > 0) {
             //  fetchWithTags();
-            List<RevTag> allAnnotatedTags = getAllAnnotatedTags();
-
-            Map<String, List<RevTag>> tagsByNamePrefix = tagsByNamePrefix(allAnnotatedTags);
-            List<RevTag> tagsToDelete = tagsByNamePrefix.get(namePrefix);
+            List<RevTag> tagsToDelete = tagsToDelete(namePrefix);
             if (tagsToDelete == null || tagsToDelete.size() == 0) {
                 throw new VcsTagNotFoundException("Tags with prefix \"" + namePrefix + "\" not found");
             }
-            tagsToDelete.sort(new TagsByDateComparator<RevTag>());
-            //TODO-EVG logger
-            if (logger.isDebugEnabled()) {
-                logger.debug("--------------");
-                tagsToDelete.stream().forEach(tempTag -> logger.debug("Tag matches to \"" + namePrefix + "\" is " + tempTag.getTagName() + "(" + tempTag.getName() + ") " + tempTag.getTaggerIdent().getWhen()));
-                logger.debug("--------------");
-            }
+
+//            String messageFormat="Tag matches to \"%s\" is %s(%s) %s";
+//            if (logger.isDebugEnabled()) {
+//                logger.debug("--------------");
+//                tagsToDelete.stream().forEach(tempTag -> logger.debug(String.format(messageFormat, namePrefix, tempTag.getTagName(), tempTag.getName(), Utils.convert(tempTag.getTaggerIdent().getWhen()))));
+//                logger.debug("--------------");
+//            }
             int size = tagsToDelete.size();
 
             List<RevTag> revTagsToDelete;
             if (size > numberTagsToLeft) {
+                tagsToDelete.sort(new TagsByDateComparator<RevTag>());
                 revTagsToDelete = tagsToDelete.subList(0, size - numberTagsToLeft);
                 String[] tagsToDeleteName = revTagsToDelete.stream().map(tempTag -> tempTag.getTagName()).toArray(String[]::new);
                 deleteTags(tagsToDeleteName);
                 if (logger.isDebugEnabled()) {
                     logger.debug("--------------");
-                    revTagsToDelete.stream().forEach(tempTag -> logger.debug("Tag to delete: " + tempTag.getName() + " from " + tempTag.getTaggerIdent().getWhen()));
+                    revTagsToDelete.stream().forEach(tempTag -> logger.debug("Tag to delete: " + tempTag.getName() + " from " + Utils.convert(tempTag.getTaggerIdent().getWhen())));
                     logger.debug("--------------");
                 }
             }
@@ -194,18 +210,14 @@ public class GitManager implements VCSManager {
             FetchCommand fetch = git.fetch();
             //fetch.setProgressMonitor(progressMonitor);
             fetch.setTagOpt(TagOpt.FETCH_TAGS).call();
-            logger.debug("Fetch from " + getRemoteRepoURI() + " SUCCESS");
+            logger.debug("Fetch from " + remoteRepoUri + " SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VcsWrongRemoteRepoException("Wrong remote repo: " + getRemoteRepoURI(), e);
+            throw new VcsWrongRemoteRepoException("Wrong remote repo: " + remoteRepoUri, e);
         } catch (TransportException e) {
-            throw new VcsRemoteConnectionException("Connection error: couldn't fetch", e);
+            throw new VcsRemoteConnectionException("Connection error: can't connect to " + remoteRepoUri, e);
         } catch (GitAPIException e) {
             throw new VcsUnknownException(e);
         }
-    }
-
-    public String getRemoteRepoURI() {
-        return repo.getConfig().getString("remote", "origin", "url");
     }
 
     private String[] getAllTags() {
@@ -234,9 +246,9 @@ public class GitManager implements VCSManager {
         }
         try {
             git.push().setRefSpecs(refsForRemoteDelete).call();
-            logger.debug("Delete tags from remote repo " + getRemoteRepoURI() + " SUCCESS");
+            logger.debug("Delete tags from remote repo " + remoteRepoUri + " SUCCESS");
         } catch (InvalidRemoteException e) {
-            throw new VcsWrongRemoteRepoException("Wrong remote repo: " + getRemoteRepoURI(), e);
+            throw new VcsWrongRemoteRepoException("Wrong remote repo: " + remoteRepoUri, e);
         } catch (TransportException e) {
             throw new VcsRemoteConnectionException("Connection error: couldn't connect to remote repo for delete", e);
         } catch (GitAPIException e) {
@@ -244,21 +256,26 @@ public class GitManager implements VCSManager {
         }
     }
 
-    private List<RevTag> getAllAnnotatedTags() throws VcsUnknownException, VcsTagNotFoundException {
-        Map<String, Ref> tags = repo.getTags();
-        Collection<Ref> values = tags.values();
+    private List<RevTag> tagsToDelete(String namePrefix) throws VcsUnknownException, VcsTagNotFoundException {
+        Collection<Ref> refTags = repo.getTags().values();
         RevWalk revWalk = new RevWalk(repo);
         ArrayList<RevTag> resultRevTags = new ArrayList<>();
 
-        for (Ref tag : values) {
-            ObjectId objectId = tag.getObjectId();
+        for (Ref refObject : refTags) {
+            ObjectId objectId = refObject.getObjectId();
             int objectType = 0;
             try {
                 objectType = revWalk.parseAny(objectId).getType();
                 if (objectType == 4) {
                     RevTag revTag = revWalk.parseTag(objectId);
-                    resultRevTags.add(revTag);
-                    logger.debug("Annotated tag " + revTag.getTagName() + " retrieve successful ");
+                    String commitId = revTag.getObject().getId().getName();
+                    String message = String.format("Found annotated tag %s from %s on commit %s", revTag.getTagName(), Utils.convert(revTag.getTaggerIdent().getWhen()), commitId);
+
+                    if (equalIdent(revTag.getTaggerIdent()) && revTag.getTagName().startsWith(namePrefix)) {
+                        resultRevTags.add(revTag);
+                        message += "*";
+                    }
+                    logger.debug(message);
                 }
             } catch (MissingObjectException e) {
                 throw new VcsTagNotFoundException(e);
@@ -266,17 +283,20 @@ public class GitManager implements VCSManager {
                 throw new VcsUnknownException(e);
             }
         }
+        logger.info(String.format("Found %d tags from tagger %s(%s) starts from %s", resultRevTags.size(), personIdent.getName(), personIdent.getEmailAddress(), namePrefix));
         revWalk.close();
         return resultRevTags;
     }
 
-    private Map<String, List<RevTag>> tagsByNamePrefix(Collection<RevTag> tags) {
-        Map<String, List<RevTag>> collect = tags.stream()
-                .filter(temTag -> temTag.getTagName().contains("#"))
-                .collect(Collectors.groupingBy(tempTag ->
-                                tempTag.getTagName().substring(0, tempTag.getTagName().lastIndexOf("#")))
-                );
-        return collect;
+//    private List<RevTag> tagsToDelete(Collection<RevTag> allTags, String namePrefix) {
+//        List<RevTag> collect = allTags.stream()
+//                .filter(temTag -> equalIdent(temTag.getTaggerIdent()) && temTag.getName().startsWith(namePrefix))
+//                .collect(Collectors.toList());
+//        return collect;
+//    }
+
+    private boolean equalIdent(PersonIdent taggerIdent) {
+        return personIdent.getName().equals(taggerIdent.getName()) && personIdent.getEmailAddress().equals(taggerIdent.getEmailAddress());
     }
 
     @Override
