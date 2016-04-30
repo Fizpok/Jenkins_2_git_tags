@@ -12,7 +12,7 @@ public class Utils {
     public static String convert(Date date) {
 
 
-        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG, Locale.getDefault());
+        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.LONG, Locale.getDefault(Locale.Category.DISPLAY));//, Locale.getDefault());
         //DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy, ")
         return dateFormat.format(date);
     }

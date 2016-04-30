@@ -163,38 +163,6 @@ public class GitManager implements VCSManager {
         }
     }
 
-    @Override
-    public void deleteTags(String namePrefix, int numberTagsToLeft) throws VcsTagNotFoundException, VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
-        if (numberTagsToLeft > 0) {
-            //  fetchWithTags();
-            List<RevTag> tagsToDelete = tagsToDelete(namePrefix);
-            if (tagsToDelete == null || tagsToDelete.size() == 0) {
-                throw new VcsTagNotFoundException("Tags with prefix \"" + namePrefix + "\" not found");
-            }
-
-//            String messageFormat="Tag matches to \"%s\" is %s(%s) %s";
-//            if (logger.isDebugEnabled()) {
-//                logger.debug("--------------");
-//                tagsToDelete.stream().forEach(tempTag -> logger.debug(String.format(messageFormat, namePrefix, tempTag.getTagName(), tempTag.getName(), Utils.convert(tempTag.getTaggerIdent().getWhen()))));
-//                logger.debug("--------------");
-//            }
-            int size = tagsToDelete.size();
-
-            List<RevTag> revTagsToDelete;
-            if (size > numberTagsToLeft) {
-                tagsToDelete.sort(new TagsByDateComparator<RevTag>());
-                revTagsToDelete = tagsToDelete.subList(0, size - numberTagsToLeft);
-                String[] tagsToDeleteName = revTagsToDelete.stream().map(tempTag -> tempTag.getTagName()).toArray(String[]::new);
-                deleteTags(tagsToDeleteName);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("--------------");
-                    revTagsToDelete.stream().forEach(tempTag -> logger.debug("Tag to delete: " + tempTag.getName() + " from " + Utils.convert(tempTag.getTaggerIdent().getWhen())));
-                    logger.debug("--------------");
-                }
-            }
-        }
-    }
-
     private static void setRepository(GitManager gitManager) throws VcsWrongLocalRepoException {
         FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitManager.gitDir).readEnvironment()// scan environment GIT_* variables
                 .findGitDir();// scan up the file system tree
@@ -225,6 +193,38 @@ public class GitManager implements VCSManager {
         Collection<Ref> values = tags.values();
         String[] names = values.stream().map(tempRef -> tempRef.getName()).toArray(String[]::new);
         return names;
+    }
+
+    @Override
+    public void deleteTags(String namePrefix, int numberTagsToLeft) throws VcsTagNotFoundException, VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
+        if (numberTagsToLeft > 0) {
+            //  fetchWithTags();
+            List<RevTag> tagsToDelete = tagsToDelete(namePrefix);
+            if (tagsToDelete == null || tagsToDelete.size() == 0) {
+                throw new VcsTagNotFoundException("Tags with prefix \"" + namePrefix + "\" not found");
+            }
+
+//            String messageFormat="Tag matches to \"%s\" is %s(%s) %s";
+//            if (logger.isDebugEnabled()) {
+//                logger.debug("--------------");
+//                tagsToDelete.stream().forEach(tempTag -> logger.debug(String.format(messageFormat, namePrefix, tempTag.getTagName(), tempTag.getName(), Utils.convert(tempTag.getTaggerIdent().getWhen()))));
+//                logger.debug("--------------");
+//            }
+            int size = tagsToDelete.size();
+
+            List<RevTag> revTagsToDelete;
+            if (size > numberTagsToLeft) {
+                tagsToDelete.sort(new TagsByDateComparator<RevTag>());
+                revTagsToDelete = tagsToDelete.subList(0, size - numberTagsToLeft);
+                String[] tagsToDeleteName = revTagsToDelete.stream().map(tempTag -> tempTag.getTagName()).toArray(String[]::new);
+                deleteTags(tagsToDeleteName);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("--------------");
+                    revTagsToDelete.stream().forEach(tempTag -> logger.debug("Tag to delete: " + tempTag.getName() + " from " + Utils.convert(tempTag.getTaggerIdent().getWhen())));
+                    logger.debug("--------------");
+                }
+            }
+        }
     }
 
     private void deleteTags(String... tagsRefFullNames) throws VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
@@ -260,7 +260,7 @@ public class GitManager implements VCSManager {
         Collection<Ref> refTags = repo.getTags().values();
         RevWalk revWalk = new RevWalk(repo);
         ArrayList<RevTag> resultRevTags = new ArrayList<>();
-
+        int maxTagNameLength = refTags.stream().max((tempTag1, tempTag2) -> Integer.compareUnsigned(tempTag1.getName().length(), tempTag2.getName().length())).get().getName().length() - 10;
         for (Ref refObject : refTags) {
             ObjectId objectId = refObject.getObjectId();
             int objectType = 0;
@@ -268,8 +268,8 @@ public class GitManager implements VCSManager {
                 objectType = revWalk.parseAny(objectId).getType();
                 if (objectType == 4) {
                     RevTag revTag = revWalk.parseTag(objectId);
-                    String commitId = revTag.getObject().getId().getName();
-                    String message = String.format("Found annotated tag %s from %s on commit %s", revTag.getTagName(), Utils.convert(revTag.getTaggerIdent().getWhen()), commitId);
+                    String commitId = revTag.getObject().getId().getName().substring(0, 8);
+                    String message = String.format("Found annotated tag %-" + maxTagNameLength + "s from %s on commit %s", revTag.getTagName(), Utils.convert(revTag.getTaggerIdent().getWhen()), commitId);
 
                     if (equalIdent(revTag.getTaggerIdent()) && revTag.getTagName().startsWith(namePrefix)) {
                         resultRevTags.add(revTag);
