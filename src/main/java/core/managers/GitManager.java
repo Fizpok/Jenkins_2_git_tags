@@ -66,6 +66,10 @@ public class GitManager implements VcsManager {
         return gitManager;
     }
 
+    private static GitManager createManager(String gitPathName) throws VcsWrongLocalRepoException {
+        return createManager(new File(gitPathName));
+    }
+
     private static GitManager createManager(File gitPath) throws VcsWrongLocalRepoException {
         GitManager result = new GitManager();
         result.logger = LoggerFactory.getLogger(GitManager.class);
@@ -89,7 +93,7 @@ public class GitManager implements VcsManager {
             throw new VcsWrongLocalRepoException("Wrong local repo folder ", gitPath);
         }
         result.logger.debug("Git local repo folder is: \"" + result.gitDir.getAbsolutePath() + "\"");
-        setRepository(result);
+        result.setRepository();
         result.personIdent = new PersonIdent(result.repo);
         result.git = new Git(result.repo);
         result.remoteRepoUri = result.repo.getConfig().getString("remote", "origin", "url");
@@ -97,9 +101,29 @@ public class GitManager implements VcsManager {
 
     }
 
-    private static GitManager createManager(String gitPathName) throws VcsWrongLocalRepoException {
-        File gitPath = new File(gitPathName);
-        return createManager(gitPath);
+    private void setRepository() throws VcsWrongLocalRepoException {
+        FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitDir).readEnvironment()// scan environment GIT_* variables
+                .findGitDir();// scan up the file system tree
+        try {
+            repo = builder.build();
+        } catch (IOException e) {
+            throw new VcsWrongLocalRepoException("Can't create local repo in folder", gitDir, e);
+        }
+    }
+
+    private void fetchWithTags() throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongRemoteRepoException {
+        try {
+            FetchCommand fetch = git.fetch();
+            //fetch.setProgressMonitor(progressMonitor);
+            fetch.setTagOpt(TagOpt.FETCH_TAGS).call();
+            logger.debug("Fetch from " + remoteRepoUri + " SUCCESS");
+        } catch (InvalidRemoteException e) {
+            throw new VcsWrongRemoteRepoException("Wrong remote repo: " + remoteRepoUri, e);
+        } catch (TransportException e) {
+            throw new VcsRemoteConnectionException("Connection error: can't connect to " + remoteRepoUri, e);
+        } catch (GitAPIException e) {
+            throw new VcsUnknownException(e);
+        }
     }
 
     private GitManager() {
@@ -121,12 +145,7 @@ public class GitManager implements VcsManager {
 
         for (RevCommit commit : commits) {
             if (commit.getId().compareTo(objectId) == 0) {
-                StringBuilder sb = new StringBuilder().append("Commit ")
-                        .append(commit.getName())
-                        .append(" from ")
-                        .append(Utils.convert(commit.getCommitTime()))
-                        .append(" found.");
-                logger.debug(sb.toString());
+                logger.debug(String.format("Commit %s from %s found.", commit.getName(), Utils.convert(commit.getCommitTime())));
                 commitRevObject = commit;
                 break;
             }
@@ -164,31 +183,6 @@ public class GitManager implements VcsManager {
         }
     }
 
-    private static void setRepository(GitManager gitManager) throws VcsWrongLocalRepoException {
-        FileRepositoryBuilder builder = new FileRepositoryBuilder().setGitDir(gitManager.gitDir).readEnvironment()// scan environment GIT_* variables
-                .findGitDir();// scan up the file system tree
-        try {
-            gitManager.repo = builder.build();
-        } catch (IOException e) {
-            throw new VcsWrongLocalRepoException("Can't create local repo in folder", gitManager.gitDir, e);
-        }
-    }
-
-    private void fetchWithTags() throws VcsRemoteConnectionException, VcsUnknownException, VcsWrongRemoteRepoException {
-        try {
-            FetchCommand fetch = git.fetch();
-            //fetch.setProgressMonitor(progressMonitor);
-            fetch.setTagOpt(TagOpt.FETCH_TAGS).call();
-            logger.debug("Fetch from " + remoteRepoUri + " SUCCESS");
-        } catch (InvalidRemoteException e) {
-            throw new VcsWrongRemoteRepoException("Wrong remote repo: " + remoteRepoUri, e);
-        } catch (TransportException e) {
-            throw new VcsRemoteConnectionException("Connection error: can't connect to " + remoteRepoUri, e);
-        } catch (GitAPIException e) {
-            throw new VcsUnknownException(e);
-        }
-    }
-
     private String[] getAllTags() {
         Map<String, Ref> tags = repo.getTags();
         Collection<Ref> values = tags.values();
@@ -204,7 +198,6 @@ public class GitManager implements VcsManager {
             if (tagsToDelete == null || tagsToDelete.size() == 0) {
                 throw new VcsTagNotFoundException("Tags with prefix \"" + namePrefix + "\" not found");
             }
-
 //            String messageFormat="Tag matches to \"%s\" is %s(%s) %s";
 //            if (logger.isDebugEnabled()) {
 //                logger.debug("--------------");
@@ -218,17 +211,17 @@ public class GitManager implements VcsManager {
                 tagsToDelete.sort(new TagsByDateComparator<RevTag>());
                 revTagsToDelete = tagsToDelete.subList(0, size - numberTagsToLeft);
                 String[] tagsToDeleteName = revTagsToDelete.stream().map(tempTag -> tempTag.getTagName()).toArray(String[]::new);
-                deleteTags(tagsToDeleteName);
+                deleteLocalAndRemouteTags(tagsToDeleteName);
                 if (logger.isDebugEnabled()) {
                     logger.debug("--------------");
-                    revTagsToDelete.stream().forEach(tempTag -> logger.debug("Tag to delete: " + tempTag.getName() + " from " + Utils.convert(tempTag.getTaggerIdent().getWhen())));
+                    revTagsToDelete.stream().forEach(tempTag -> logger.debug(String.format("Tag to delete: %s from %s", tempTag.getName(), Utils.convert(tempTag.getTaggerIdent().getWhen()))));
                     logger.debug("--------------");
                 }
             }
         }
     }
 
-    private void deleteTags(String... tagsRefFullNames) throws VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
+    private void deleteLocalAndRemouteTags(String... tagsRefFullNames) throws VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
         try {
             git.tagDelete().setTags(tagsRefFullNames).call();
             logger.debug("Delete local tags SUCCESS");
