@@ -14,13 +14,13 @@ public class Args implements Serializable {
     private String namePrefix = null;
 
     @Option(name = "-build_number", aliases = {"-bn"}, usage = "2.1. Build number from Jenkins", required = false, metaVar = "Integer", depends = {"-commit_revision"})
-    private int buildNumber=0;
+    private Integer buildNumber = null;
 
     @Option(name = "-commit_revision", aliases = {"-cr"}, usage = "2.2. Commit revision for tag (SHA-1)", required = false, metaVar = "String", depends = {"-build_number"})
     private String commitRev = null;
 
     @Option(name = "-keep", aliases = {"-k"}, usage = "3. Set tags count with this name prefix to keep", required = false, metaVar = "Integer")
-    private int tagsToKeep=-1;
+    private int tagsToKeep = -1;
 
     @Option(name = "-repo_path", aliases = {"-rp"}, usage = "4. Set local repository path (with or without .git)", required = false, metaVar = "String")
     private File repoPath;
@@ -29,7 +29,7 @@ public class Args implements Serializable {
         return namePrefix;
     }
 
-    public int getBuildNumber() {
+    public Integer getBuildNumber() {
         return buildNumber;
     }
 

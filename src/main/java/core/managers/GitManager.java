@@ -192,7 +192,7 @@ public class GitManager implements VcsManager {
 
     @Override
     public void deleteTags(String namePrefix, int numberTagsToLeft) throws VcsTagNotFoundException, VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {
-        if (numberTagsToLeft > 0) {
+        //if (numberTagsToLeft > 0) {
             //  fetchWithTags();
             List<RevTag> tagsToDelete = tagsToDelete(namePrefix);
             if (tagsToDelete == null || tagsToDelete.size() == 0) {
@@ -214,11 +214,11 @@ public class GitManager implements VcsManager {
                 deleteLocalAndRemouteTags(tagsToDeleteName);
                 if (logger.isDebugEnabled()) {
                     logger.debug("--------------");
-                    revTagsToDelete.stream().forEach(tempTag -> logger.debug(String.format("Tag to delete: %s from %s", tempTag.getName(), Utils.convert(tempTag.getTaggerIdent().getWhen()))));
+                    revTagsToDelete.stream().forEach(tempTag -> logger.debug(String.format("Tag to delete: %s from %s", tempTag.getTagName(), Utils.convert(tempTag.getTaggerIdent().getWhen()))));
                     logger.debug("--------------");
                 }
             }
-        }
+//        }
     }
 
     private void deleteLocalAndRemouteTags(String... tagsRefFullNames) throws VcsUnknownException, VcsRemoteConnectionException, VcsWrongRemoteRepoException {

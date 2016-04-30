@@ -77,34 +77,36 @@ public class main {
             if (exitcode == 0) {
                 if (gitManager.isValidTagName(args.getNamePrefix())) {
                     //create commit
-                    if (args.getBuildNumber() > 0) {
-                        if (gitManager.isValidCommitRev(args.getCommitRev())) {
-                            String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
-                            try {
-                                gitManager.createTag(tagName, args.getCommitRev());
-                            } catch (VcsCommitNotFoundException e) {
-                                exitcode = COMMIT_NOT_FOUND_ERROR;
-                                errorMessage = e.getMessage();
-                            } catch (VcsInvalidTagNameException e) {
-                                exitcode = INVALID_TAG_NAME_ERROR;
-                                errorMessage = e.getMessage();
-                            } catch (VcsRepositoryException e) {
-                                exitcode = REPO_ERROR;
-                                errorMessage = e.getMessage();
-                            } catch (VcsRemoteConnectionException e) {
-                                exitcode = REPO_CONNECTION_ERROR;
-                                errorMessage = e.getMessage();
-                            } catch (VcsUnknownException e) {
-                                exitcode = UNKNOWN_ERROR;
-                                errorMessage = e.getMessage();
+                    if (args.getBuildNumber() != null) {
+                        if (args.getBuildNumber() > 0) {
+                            if (gitManager.isValidCommitRev(args.getCommitRev())) {
+                                String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
+                                try {
+                                    gitManager.createTag(tagName, args.getCommitRev());
+                                } catch (VcsCommitNotFoundException e) {
+                                    exitcode = COMMIT_NOT_FOUND_ERROR;
+                                    errorMessage = e.getMessage();
+                                } catch (VcsInvalidTagNameException e) {
+                                    exitcode = INVALID_TAG_NAME_ERROR;
+                                    errorMessage = e.getMessage();
+                                } catch (VcsRepositoryException e) {
+                                    exitcode = REPO_ERROR;
+                                    errorMessage = e.getMessage();
+                                } catch (VcsRemoteConnectionException e) {
+                                    exitcode = REPO_CONNECTION_ERROR;
+                                    errorMessage = e.getMessage();
+                                } catch (VcsUnknownException e) {
+                                    exitcode = UNKNOWN_ERROR;
+                                    errorMessage = e.getMessage();
+                                }
+                            } else {
+                                exitcode = WRONG_CLI_ARG;
+                                errorMessage = "Illegal commit revision id: " + args.getCommitRev() + "\n It must be commit revision id (SHA-1)";
                             }
                         } else {
                             exitcode = WRONG_CLI_ARG;
-                            errorMessage = "Illegal commit revision id: " + args.getCommitRev() + "\n It must be commit revision id (SHA-1)";
+                            errorMessage = "Illegal build number: " + args.getBuildNumber();
                         }
-                    } else {
-                        exitcode = WRONG_CLI_ARG;
-                        errorMessage = "Illegal build number: " + args.getBuildNumber();
                     }
                 } else {
                     exitcode = WRONG_CLI_ARG;
