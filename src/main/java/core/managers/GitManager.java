@@ -1,6 +1,7 @@
 package core.managers;
 
-import core.TagsByDateComparator;
+import core.comparators.git.IdentByPersonComparator;
+import core.comparators.git.TagsByDateComparator;
 import exceptions.*;
 import org.eclipse.jgit.api.FetchCommand;
 import org.eclipse.jgit.api.Git;
@@ -271,7 +272,8 @@ public class GitManager implements VCSManager {
                     String commitId = revTag.getObject().getId().getName().substring(0, 8);
                     String message = String.format("Found annotated tag %-" + maxTagNameLength + "s from %s on commit %s", revTag.getTagName(), Utils.convert(revTag.getTaggerIdent().getWhen()), commitId);
 
-                    if (equalIdent(revTag.getTaggerIdent()) && revTag.getTagName().startsWith(namePrefix)) {
+                    int personCompare = new IdentByPersonComparator().compare(personIdent, revTag.getTaggerIdent());
+                    if (personCompare == 0 && revTag.getTagName().startsWith(namePrefix)) {
                         resultRevTags.add(revTag);
                         message += "*";
                     }
@@ -294,10 +296,6 @@ public class GitManager implements VCSManager {
 //                .collect(Collectors.toList());
 //        return collect;
 //    }
-
-    private boolean equalIdent(PersonIdent taggerIdent) {
-        return personIdent.getName().equals(taggerIdent.getName()) && personIdent.getEmailAddress().equals(taggerIdent.getEmailAddress());
-    }
 
     @Override
     public boolean isValidCommitRev(String commitRev) {

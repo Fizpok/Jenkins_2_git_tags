@@ -1,4 +1,4 @@
-package core;
+package core.comparators.git;
 
 import org.eclipse.jgit.revwalk.RevTag;
 
