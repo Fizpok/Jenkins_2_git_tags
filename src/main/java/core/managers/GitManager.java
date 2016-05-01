@@ -251,6 +251,7 @@ public class GitManager implements VcsManager {
     }
 
     private List<RevTag> tagsToDelete(String namePrefix) throws VcsUnknownException, VcsTagNotFoundException {
+        SortedMap<Date, String> messagesByData = new TreeMap<>();
         Collection<Ref> refTags = repo.getTags().values();
         RevWalk revWalk = new RevWalk(repo);
         ArrayList<RevTag> resultRevTags = new ArrayList<>();
@@ -264,13 +265,13 @@ public class GitManager implements VcsManager {
                     RevTag revTag = revWalk.parseTag(objectId);
                     String commitId = revTag.getObject().getId().getName().substring(0, 8);
                     String message = String.format("Found annotated tag %-" + maxTagNameLength + "s from %s on commit %s", revTag.getTagName(), Utils.convert(revTag.getTaggerIdent().getWhen()), commitId);
-
+                    messagesByData.put(revTag.getTaggerIdent().getWhen(), message);
                     int personCompare = new IdentByPersonComparator().compare(personIdent, revTag.getTaggerIdent());
                     if (personCompare == 0 && revTag.getTagName().startsWith(namePrefix)) {
                         resultRevTags.add(revTag);
                         message += "*";
                     }
-                    logger.debug(message);
+                    //logger.debug(message);
                 }
             } catch (MissingObjectException e) {
                 throw new VcsTagNotFoundException(e);
@@ -278,6 +279,7 @@ public class GitManager implements VcsManager {
                 throw new VcsUnknownException(e);
             }
         }
+        messagesByData.entrySet().stream().forEachOrdered(tempEntry -> logger.debug(tempEntry.getValue()));
         logger.info(String.format("Found %d tags from tagger %s(%s) starts from %s", resultRevTags.size(), personIdent.getName(), personIdent.getEmailAddress(), namePrefix));
         revWalk.close();
         return resultRevTags;
