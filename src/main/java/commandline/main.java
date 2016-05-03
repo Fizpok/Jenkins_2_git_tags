@@ -76,8 +76,26 @@ public class main {
             }
             if (exitcode == 0) {
                 if (gitManager.isValidTagName(args.getNamePrefix())) {
-                    //create commit
-                    if (args.getBuildNumber() != null) {
+                    boolean needCreateTag = (args.getBuildNumber() != null) && (args.getBuildNumber() > 0);
+                    if (args.getTagsToKeep() > -1) {//delete unnecessary tags
+                        int keepTagsNumber = needCreateTag ? args.getTagsToKeep() - 1 : args.getTagsToKeep();
+                        try {
+                            gitManager.deleteTags(args.getNamePrefix(), keepTagsNumber);
+                        } catch (VcsTagNotFoundException e) {
+                            exitcode = TAG_NOT_FOUND_ERROR;
+                            errorMessage = e.getMessage();
+                        } catch (VcsRemoteConnectionException e) {
+                            exitcode = REPO_CONNECTION_ERROR;
+                            errorMessage = e.getMessage();
+                        } catch (VcsRepositoryException e) {
+                            exitcode = REPO_ERROR;
+                            errorMessage = e.getMessage();
+                        } catch (VcsUnknownException e) {
+                            exitcode = UNKNOWN_ERROR;
+                            errorMessage = e.getMessage();
+                        }
+                    }
+                    if (args.getBuildNumber() != null) { //Create new tag
                         if (args.getBuildNumber() > 0) {
                             if (gitManager.isValidCommitRev(args.getCommitRev())) {
                                 String tagName = args.getNamePrefix() + "#" + args.getBuildNumber();
@@ -111,25 +129,6 @@ public class main {
                 } else {
                     exitcode = WRONG_CLI_ARG;
                     errorMessage = "Invalid name prefix " + args.getNamePrefix();
-                }
-                if (exitcode == 0) {
-                    if (args.getTagsToKeep() > -1) {//delete unnecessary tags
-                        try {
-                            gitManager.deleteTags(args.getNamePrefix(), args.getTagsToKeep());
-                        } catch (VcsTagNotFoundException e) {
-                            exitcode = TAG_NOT_FOUND_ERROR;
-                            errorMessage = e.getMessage();
-                        } catch (VcsRemoteConnectionException e) {
-                            exitcode = REPO_CONNECTION_ERROR;
-                            errorMessage = e.getMessage();
-                        } catch (VcsRepositoryException e) {
-                            exitcode = REPO_ERROR;
-                            errorMessage = e.getMessage();
-                        } catch (VcsUnknownException e) {
-                            exitcode = UNKNOWN_ERROR;
-                            errorMessage = e.getMessage();
-                        }
-                    }
                 }
             }
         }
