@@ -78,7 +78,7 @@ public class main {
                 if (gitManager.isValidTagName(args.getNamePrefix())) {
                     boolean needCreateTag = (args.getBuildNumber() != null) && (args.getBuildNumber() > 0);
                     if (args.getTagsToKeep() > -1) {//delete unnecessary tags
-                        int keepTagsNumber = needCreateTag ? args.getTagsToKeep() - 1 : args.getTagsToKeep();
+                        int keepTagsNumber = needCreateTag && args.getTagsToKeep() > 0 ? args.getTagsToKeep() - 1 : args.getTagsToKeep();
                         try {
                             gitManager.deleteTags(args.getNamePrefix(), keepTagsNumber);
                         } catch (VcsTagNotFoundException e) {
